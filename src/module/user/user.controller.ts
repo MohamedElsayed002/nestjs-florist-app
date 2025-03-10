@@ -28,6 +28,11 @@ export class UserController {
     return this.userService.verifyCode(email, code);
   }
 
+  @Put('forgot-password-complete')
+  async forgotPasswordComplete(@Body('email') email : string,@Body('newPassword') newPassword : string )  {
+    return this.userService.forgotPasswordComplete(email,newPassword)
+  }
+
   @Put(':id')
   async updateUser(@Param('id') id: string, @Body() updateUser: CreateUserDto) {
     return this.userService.updateUser(id, updateUser);
