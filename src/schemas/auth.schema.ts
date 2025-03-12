@@ -29,6 +29,3 @@ export class Auth {
 }
 
 export const authSchema = SchemaFactory.createForClass(Auth);
-export const authenticateSchema = MongooseModule.forFeature([
-  { name: Auth.name, schema: authSchema },
-]);

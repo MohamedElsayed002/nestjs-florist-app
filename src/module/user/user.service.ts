@@ -10,7 +10,7 @@ import { Auth } from 'src/schemas/auth.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt'; 
-import { EmailService } from 'src/service/email.service';
+import { EmailService } from 'src/service/email.provider';
 
 @Injectable()
 export class UserService {

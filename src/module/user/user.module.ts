@@ -6,7 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Auth, authSchema } from 'src/schemas/auth.schema';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import { EmailService } from 'src/service/email.service';
+import { EmailService } from 'src/service/email.provider';
 
 @Module({
   imports: [

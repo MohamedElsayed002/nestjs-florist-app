@@ -26,7 +26,6 @@ export class AuthService {
 
     const hashedPassword = bcrypt.hashSync(password, 8);
 
-    // ✅ Correct way to save a document
     const user = new this.authModel({
       name,
       email,
@@ -35,7 +34,7 @@ export class AuthService {
       phone,
     });
 
-    return user.save(); // ✅ Ensure document is saved
+    return user.save(); 
   }
 
   async loginUser(
