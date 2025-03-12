@@ -9,7 +9,7 @@ import { CreateUserDto } from '../auth/dto/auth.dto';
 import { Auth } from 'src/schemas/auth.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import * as bcrypt from 'bcrypt'; 
+import * as bcrypt from 'bcrypt';
 import { EmailService } from 'src/service/email.provider';
 
 @Injectable()
@@ -72,21 +72,27 @@ export class UserService {
     };
   }
 
-
-  async forgotPasswordComplete(email: string, newPassword: string) : Promise<{message : string}> {
+  async forgotPasswordComplete(
+    email: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     const user = await this.authModel.findOne({ email });
 
     if (!user) {
-        throw new NotFoundException('Email not found');
+      throw new NotFoundException('Email not found');
     }
 
     // Ensure the user has verified their code before allowing password reset
     if (user.verificationCode) {
-        throw new BadRequestException('Verification code not confirmed. Please verify your code first.');
+      throw new BadRequestException(
+        'Verification code not confirmed. Please verify your code first.',
+      );
     }
 
     if (newPassword.length < 8) {
-        throw new BadRequestException('Password must be at least 8 characters long.');
+      throw new BadRequestException(
+        'Password must be at least 8 characters long.',
+      );
     }
 
     // Hash the password asynchronously
@@ -95,11 +101,10 @@ export class UserService {
     // Update the user's password
     user.password = hashPassword;
 
-
     await user.save();
 
     return { message: 'Password changed successfully' };
-}
+  }
 
   async updateUser(id: string, updateUser: CreateUserDto) {
     if (updateUser.password) {

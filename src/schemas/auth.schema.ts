@@ -21,8 +21,8 @@ export class Auth {
   @Prop()
   codeExpiresAt: Date;
 
-  @Prop({default : 'Male',enum: ['Male','Female']})
-  gender : string;
+  @Prop({ default: 'Male', enum: ['Male', 'Female'] })
+  gender: string;
 
   @Prop({ default: 'User', enum: ['User', 'Admin'] })
   role: string;

@@ -34,7 +34,7 @@ export class AuthService {
       phone,
     });
 
-    return user.save(); 
+    return user.save();
   }
 
   async loginUser(

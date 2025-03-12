@@ -15,7 +15,7 @@ import { ProductModule } from './module/products/products.module';
     MongooseModule.forRoot(process.env.MONGO_URL),
     AuthModule,
     UserModule,
-    ProductModule
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],

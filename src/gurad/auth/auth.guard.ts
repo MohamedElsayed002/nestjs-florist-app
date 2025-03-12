@@ -41,7 +41,7 @@ export class AuthGuard implements CanActivate {
       ]);
 
       if (!roles || roles.length === 0) {
-        request['user'] = user; 
+        request['user'] = user;
         return true;
       }
 
@@ -55,7 +55,7 @@ export class AuthGuard implements CanActivate {
       request['user'] = user; // Attach user to request
       return true;
     } catch (error) {
-      console.error('AuthGuard Error:', error.message); 
+      console.error('AuthGuard Error:', error.message);
       throw new UnauthorizedException('Invalid or expired token.');
     }
   }

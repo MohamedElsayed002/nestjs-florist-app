@@ -1,4 +1,11 @@
-import { IsEmail, IsEnum, IsNotEmpty, Length, Matches, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  Length,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsNotEmpty({ message: 'Name is required' })

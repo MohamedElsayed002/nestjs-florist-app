@@ -29,8 +29,11 @@ export class UserController {
   }
 
   @Put('forgot-password-complete')
-  async forgotPasswordComplete(@Body('email') email : string,@Body('newPassword') newPassword : string )  {
-    return this.userService.forgotPasswordComplete(email,newPassword)
+  async forgotPasswordComplete(
+    @Body('email') email: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.userService.forgotPasswordComplete(email, newPassword);
   }
 
   @Put(':id')

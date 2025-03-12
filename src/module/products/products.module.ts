@@ -12,7 +12,7 @@ import { AuthModule } from '../auth/auth.module'; // ✅ Import AuthModule
   imports: [
     ConfigModule,
     AuthModule,
-    MongooseModule.forFeature([{ name: Product.name, schema: productSchema }])
+    MongooseModule.forFeature([{ name: Product.name, schema: productSchema }]),
   ],
   controllers: [ProductsController],
   providers: [ProductsService, CloudinaryProvider],
