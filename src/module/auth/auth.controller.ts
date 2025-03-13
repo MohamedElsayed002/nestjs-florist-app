@@ -38,6 +38,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Get('profile')
+  @SetMetadata('roles', ['Admin', 'User'])
   getProfile(@Request() req: any) {
     return req.user;
   }

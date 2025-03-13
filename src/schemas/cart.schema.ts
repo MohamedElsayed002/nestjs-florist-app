@@ -25,10 +25,10 @@ export class Cart extends Document {
   ])
   cartItems: { product: Product; quantity: number; price: number }[];
 
-  @Prop({ type: Number })
+  @Prop({ type: Number, default: 0 })
   totalPrice: number;
 
-  @Prop({ type: Number })
+  @Prop({ type: Number, default: 0 })
   totalPriceDiscount: number;
 }
 

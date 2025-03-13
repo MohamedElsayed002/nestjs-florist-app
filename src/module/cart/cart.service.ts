@@ -99,5 +99,47 @@ export class CartService {
     await cart.save();
     return cart;
   }
-}
 
+  async updateCart(
+    userId: string,
+    productId: string,
+    quantity: number,
+  ): Promise<Cart> {
+    const cart = await this.cartModel.findOne({ user: userId });
+
+    if (!cart) {
+      throw new NotFoundException('Cart not found');
+    }
+
+    const itemIndex = cart.cartItems.findIndex(
+      (item) => item.product.toString() === productId,
+    );
+
+    if (itemIndex > -1) {
+      cart.cartItems[itemIndex].quantity = quantity;
+      cart.cartItems[itemIndex].price =
+        cart.cartItems[itemIndex].quantity *
+        cart.cartItems[itemIndex].product.price;
+    } else {
+      throw new NotFoundException('Product not found in cart');
+    }
+
+    cart.totalPrice = cart.cartItems.reduce(
+      (total, item) => total + item.price,
+      0,
+    );
+    return await cart.save();
+  }
+
+  async clearCart(userId: string): Promise<Cart> {
+    const cart = await this.cartModel.findOne({ user: userId });
+    if (!cart) {
+      throw new NotFoundException('Cart not found');
+    }
+
+    cart.cartItems = [];
+    cart.totalPrice = 0;
+    cart.totalPriceDiscount = 0;
+    return await cart.save();
+  }
+}

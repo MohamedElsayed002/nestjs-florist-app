@@ -7,17 +7,22 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './module/user/user.module';
 import { ProductModule } from './module/products/products.module';
 import { CartModule } from './module/cart/cart.module';
+import { OrderModule } from './module/order/order.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MongooseModule.forRoot(process.env.MONGO_URL),
+    MongooseModule.forRoot(process.env.MONGO_URL, {
+      serverSelectionTimeoutMS: 20000,
+      maxPoolSize: 20,
+    }),
     AuthModule,
     UserModule,
     ProductModule,
     CartModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService],
