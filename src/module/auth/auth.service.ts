@@ -39,7 +39,7 @@ export class AuthService {
 
   async loginUser(
     loginUser: LoginUserDto,
-  ): Promise<{ user: Auth; access_token: string }> {
+  ): Promise<{ access_token: string }> {
     const user = await this.authModel.findOne({ email: loginUser.email });
     if (!user) {
       throw new ConflictException('Email not found');
@@ -60,7 +60,7 @@ export class AuthService {
       { secret: process.env.JWT_SECRET, expiresIn: '1h' }, // ✅ Corrected expiration format
     );
 
-    return { user, access_token };
+    return { access_token };
   }
 
   async findAll(): Promise<Auth[]> {

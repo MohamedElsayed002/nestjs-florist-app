@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -12,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
+import { CreateCartDto } from './dto/cart.dto';
 
 @Controller('cart')
 @UseGuards(AuthGuard) // Protect routes
@@ -22,10 +24,9 @@ export class CartController {
   @SetMetadata('roles', ['Admin', 'User'])
   async addToCart(
     @Param('productId') productId: string,
-    @Body('userId') userId: string,
-    @Body('quantity') quantity: number,
+    @Body() data: CreateCartDto,
   ) {
-    return this.cartService.addToCart(userId, productId, quantity);
+    return this.cartService.addToCart(data.userId, productId, data.quantity);
   }
 
   @Get(':userId')
@@ -49,12 +50,15 @@ export class CartController {
     @Req() req: any,
   ) {
     const userId = req.user._id;
+    if(!quantity) {
+      throw new BadRequestException('Quantity required')
+    }
     return this.cartService.updateCart(userId, productId, quantity);
   }
 
   @Delete('remove')
   @SetMetadata('roles', ['Admin', 'User'])
-  async clearCart(@Req() req) {
+  async clearCart(@Req() req: any) {
     const userId = req.user._id;
     return this.cartService.clearCart(userId);
   }

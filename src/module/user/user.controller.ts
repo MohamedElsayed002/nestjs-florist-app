@@ -11,10 +11,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from '../auth/dto/auth.dto';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
+import { UpdateUserDto } from './dto/user.dto';
 
-@Controller('user')
+@Controller('users')
 export class UserController {
   constructor(private userService: UserService) {}
 
@@ -37,7 +37,9 @@ export class UserController {
   }
 
   @Put(':id')
-  async updateUser(@Param('id') id: string, @Body() updateUser: CreateUserDto) {
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['Admin', 'User'])
+  async updateUser(@Param('id') id: string, @Body() updateUser: UpdateUserDto) {
     return this.userService.updateUser(id, updateUser);
   }
 

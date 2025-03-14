@@ -45,7 +45,6 @@ export class CreateProductDto {
 
 export class UpdateProductDto {
   @IsOptional()
-  @IsString()
   @Length(3, 100)
   title: string;
 

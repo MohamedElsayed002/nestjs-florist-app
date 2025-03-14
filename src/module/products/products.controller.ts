@@ -43,7 +43,6 @@ export class ProductsController {
     const titleExists = await this.productsService.isTitleTake(
       createProductDto.title,
     );
-    console.log(titleExists, 'title exists');
     if (titleExists) {
       throw new BadRequestException(
         'Product title already exists. Please try another title',
@@ -82,7 +81,7 @@ export class ProductsController {
   @SetMetadata('roles', ['Admin', 'User'])
   async updateProduct(
     @Param('id') productId: string,
-    @Body() updateData: UpdateProductDto,
+    @Body() updateData?: UpdateProductDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     return await this.productsService.updateProduct(

@@ -2,6 +2,7 @@ import {
   IsBoolean,
   isBoolean,
   IsDate,
+  IsMongoId,
   IsNotEmpty,
   IsOptional,
 } from 'class-validator';
@@ -23,4 +24,11 @@ export class statusShippingDto {
   @IsOptional()
   @IsDate()
   deliveredAt: Date;
+
+}
+
+export class isMongoID {
+    
+    @IsMongoId()
+    orderId: string
 }
