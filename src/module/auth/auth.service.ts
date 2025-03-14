@@ -37,9 +37,7 @@ export class AuthService {
     return user.save();
   }
 
-  async loginUser(
-    loginUser: LoginUserDto,
-  ): Promise<{ access_token: string }> {
+  async loginUser(loginUser: LoginUserDto): Promise<{ access_token: string }> {
     const user = await this.authModel.findOne({ email: loginUser.email });
     if (!user) {
       throw new ConflictException('Email not found');

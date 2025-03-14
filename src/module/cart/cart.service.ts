@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { isNotEmpty } from 'class-validator';
 import { Model } from 'mongoose';
@@ -22,10 +26,10 @@ export class CartService {
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-    
+
     // check the quantity of products in stock
-    if(quantity > product.quantity) {
-      throw new BadRequestException("we don't have all this quantity")
+    if (quantity > product.quantity) {
+      throw new BadRequestException("we don't have all this quantity");
     }
 
     let cart = await this.cartModel.findOne({ user: userId });
@@ -74,7 +78,10 @@ export class CartService {
     return cart;
   }
 
-  async removeCart(userId: string, productId: string): Promise<{message : string}> {
+  async removeCart(
+    userId: string,
+    productId: string,
+  ): Promise<{ message: string }> {
     const cart = await this.cartModel.findOne({ user: userId });
 
     if (!cart) {
@@ -98,11 +105,11 @@ export class CartService {
 
     if (cart.cartItems.length === 0) {
       await this.cartModel.findByIdAndDelete(cart._id);
-      return {message : "product removed from cart. your cart is empty"};
+      return { message: 'product removed from cart. your cart is empty' };
     }
 
     await cart.save();
-    return {message : "product removed from cart"};
+    return { message: 'product removed from cart' };
   }
 
   async updateCart(
@@ -113,38 +120,46 @@ export class CartService {
     const cart = await this.cartModel
       .findOne({ user: userId })
       .populate('cartItems.product'); // Ensure product details are populated
-  
+
     if (!cart) {
       throw new NotFoundException('Cart not found');
     }
-  
+
     const itemIndex = cart.cartItems.findIndex(
       (item) => item.product._id.toString() === productId, // Use `_id` instead of `toString()`
     );
-  
+
     if (itemIndex > -1) {
       // Ensure product exists and has a price before calculation
       const product = cart.cartItems[itemIndex].product;
-      if (!product || product.price === undefined || product.quantity === undefined) {
+      if (
+        !product ||
+        product.price === undefined ||
+        product.quantity === undefined
+      ) {
         throw new NotFoundException('Product details not found');
       }
-  
+
       // Check if requested quantity exceeds stock
       if (quantity > product.quantity) {
-        throw new BadRequestException(`Exceeded stock. Only ${product.quantity} available.`);
+        throw new BadRequestException(
+          `Exceeded stock. Only ${product.quantity} available.`,
+        );
       }
-  
+
       cart.cartItems[itemIndex].quantity = quantity;
       cart.cartItems[itemIndex].price = quantity * product.price;
     } else {
       throw new NotFoundException('Product not found in cart');
     }
-  
-    cart.totalPrice = cart.cartItems.reduce((total, item) => total + item.price, 0);
-  
+
+    cart.totalPrice = cart.cartItems.reduce(
+      (total, item) => total + item.price,
+      0,
+    );
+
     return await cart.save();
   }
-  
 
   async clearCart(userId: string): Promise<Cart> {
     const cart = await this.cartModel.findOne({ user: userId });

@@ -1,7 +1,14 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsOptional, Matches, MinLength } from "class-validator";
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 export class UpdateUserDto {
-@IsOptional()
+  @IsOptional()
   name: string;
 
   @IsOptional()
@@ -22,4 +29,3 @@ export class UpdateUserDto {
   @IsEnum(['Male', 'Female'], { message: 'Gender must be Male or Female' })
   gender: string;
 }
-

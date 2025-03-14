@@ -32,7 +32,7 @@ export class AuthController {
   @Post('login')
   async loginUser(
     @Body() loginUser: LoginUserDto,
-  ): Promise<{  access_token: string }> {
+  ): Promise<{ access_token: string }> {
     return this.authService.loginUser(loginUser);
   }
 

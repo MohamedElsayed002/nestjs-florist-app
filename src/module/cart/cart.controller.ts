@@ -50,8 +50,8 @@ export class CartController {
     @Req() req: any,
   ) {
     const userId = req.user._id;
-    if(!quantity) {
-      throw new BadRequestException('Quantity required')
+    if (!quantity) {
+      throw new BadRequestException('Quantity required');
     }
     return this.cartService.updateCart(userId, productId, quantity);
   }

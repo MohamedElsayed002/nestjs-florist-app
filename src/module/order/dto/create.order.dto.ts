@@ -24,11 +24,9 @@ export class statusShippingDto {
   @IsOptional()
   @IsDate()
   deliveredAt: Date;
-
 }
 
 export class isMongoID {
-    
-    @IsMongoId()
-    orderId: string
+  @IsMongoId()
+  orderId: string;
 }

@@ -47,12 +47,15 @@ export class Order extends Document {
   @Prop({ type: Date })
   paidAt: Date;
 
-  @Prop({ type: String }) 
+  @Prop({ type: String })
   paymentId: string; // Stores transaction ID from Stripe, PayPal, etc.
 
-  @Prop({ type: String, enum: ['pending', 'completed', 'failed'], default: 'pending' })
+  @Prop({
+    type: String,
+    enum: ['pending', 'completed', 'failed'],
+    default: 'pending',
+  })
   paymentStatus: string; // Status of the payment
-
 
   @Prop({ default: false })
   isDelivered: boolean;

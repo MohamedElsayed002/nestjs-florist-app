@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Put,
+  Req,
   SetMetadata,
   UploadedFile,
   UseGuards,
@@ -18,13 +19,15 @@ import slugify from 'slugify';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
 import { Product } from 'src/schemas/product.schema';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
-
+import { Logger } from '@nestjs/common';
 @Controller('products')
 export class ProductsController {
+  private logger = new Logger('ProductController')
   constructor(private readonly productsService: ProductsService) {}
 
   @Get('')
   async getAllProducts() {
+    this.logger.verbose(`User retrieving all tasks`)
     return this.productsService.getAllProducts();
   }
 
@@ -35,7 +38,9 @@ export class ProductsController {
   async addProduct(
     @UploadedFile() file: Express.Multer.File,
     @Body() createProductDto: CreateProductDto,
+    @Req() req: any
   ): Promise<{ message: string; product: Product }> {
+    this.logger.verbose(`User ${req.user.email}  using this route ${JSON.stringify(createProductDto)}`)
     if (!file) {
       throw new BadRequestException('File is missing');
     }
@@ -97,4 +102,7 @@ export class ProductsController {
   async DeleteProduct(@Param('id') productId: string) {
     return this.productsService.deleteProduct(productId);
   }
+
+  // this.logger.error(`Failed to get tasks for user ${req.user.email} . Filters ${JSON.stringify(filterDto)}`,error.stack)
 }
+
