@@ -4,11 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { isNotEmpty } from 'class-validator';
 import { Model } from 'mongoose';
-import { Auth } from 'src/schemas/auth.schema';
-import { Cart } from 'src/schemas/cart.schema';
-import { Product } from 'src/schemas/product.schema';
+import { Cart } from '../../schemas/cart.schema';
+import { Product } from '../../schemas/product.schema';
 
 @Injectable()
 export class CartService {
