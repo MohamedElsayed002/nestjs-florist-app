@@ -1,21 +1,21 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "dist/main.js",
-        "use": "@vercel/node"
-      }
-    ],
-    "functions": {
-      "api/index.js": {
-        "runtime": "nodejs18.x"
-      }
-    },
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "dist/main.js"
-      }
-    ]
-  }
-  
+  "version": 2,
+  "builds": [
+    {
+      "src": "dist/main.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "functions": {
+    "api/index.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "dist/main.js",
+      "methods": ["GET", "POST", "PUT", "DELETE"]
+    }
+  ]
+}
