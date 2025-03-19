@@ -1,19 +1,15 @@
 import { MongooseModule, Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
+import { ProductDetail } from './product.detail.schema';
+
+export type ProductDocument = Product & Document
+
 
 @Schema({ timestamps: true })
 export class Product extends Document {
-  @Prop({ trim: true })
-  title: string;
-
-  @Prop({ unique: true, lowercase: true, trim: true })
-  slug: string;
 
   @Prop({ min: 0 })
   price: number;
-
-  @Prop({ minlength: 5, maxlength: 300, trim: true })
-  description: string;
 
   @Prop({ min: 0, default: 0 })
   quantity: number;
@@ -26,6 +22,12 @@ export class Product extends Document {
 
   @Prop()
   imageId: string;
+
+  // Add product details (translations)
+  @Prop({
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: ProductDetail.name,required:true }],
+  })
+  details: Array<ProductDetail>
 }
 
-export const productSchema = SchemaFactory.createForClass(Product);
+export const ProductSchema = SchemaFactory.createForClass(Product);

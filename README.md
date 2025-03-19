@@ -111,3 +111,21 @@ async findAll(
 }
 
 ```
+
+```ts
+    // Search for products by title or description
+    async searchProducts(query: string, lang: string = "en"): Promise<ProductDocument[]> {
+        return this.productModel.find()
+            .populate({
+                path: "details",
+                match: {
+                    lang,
+                    $or: [
+                        { title: { $regex: query, $options: "i" } },
+                        { description: { $regex: query, $options: "i" } },
+                    ],
+                },
+            })
+            .exec();
+    }
+```
