@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 // import { ProductsController } from './products.controllers';
-import { ProductController } from './product.controller';
-import { ProductService } from './product.service';
+import { ProductController } from './products.controller';
+import { ProductService } from './products.service';
 // import { ProductsService } from './products.services';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Product, ProductSchema } from 'src/schemas/product.schema';
-import { ProductDetail, ProductDetailSchema } from 'src/schemas/product.detail.schema';
+import {
+  ProductDetail,
+  ProductDetailSchema,
+} from 'src/schemas/product.detail.schema';
 import { ConfigModule } from '@nestjs/config';
 import { CloudinaryProvider } from 'src/service/cloundinary.provider';
 import { AuthModule } from '../auth/auth.module'; // ✅ Import AuthModule

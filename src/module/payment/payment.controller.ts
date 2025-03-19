@@ -13,7 +13,7 @@ export class PaymentController {
   @Post('confirm-payment/:orderId')
   async confirmPayment(
     @Param('orderId') orderId: string,
-    @Body('paymentIntentId') paymentIntentId: string
+    @Body('paymentIntentId') paymentIntentId: string,
   ) {
     return this.paymentService.confirmPayment(orderId, paymentIntentId);
   }

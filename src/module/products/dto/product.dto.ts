@@ -1,74 +1,57 @@
-import { Type } from 'class-transformer';
 import {
-  IsNotEmpty,
-  IsString,
-  Min,
-  IsPositive,
-  Length,
+  IsArray,
+  IsNumber,
   IsOptional,
+  IsString,
+  MinLength,
+  Min,
+  ValidateNested,
+  IsNotEmpty,
+  Matches,
   IsUrl,
+  ArrayMinSize,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class ProductDetailDto {
+  @IsNotEmpty()
+  @IsString()
+  @Matches(/^(en|ar)$/, { message: "Language must be 'en' or 'ar'." }) // Ensure valid language codes
+  lang: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(3)
+  @Matches(/\S/, { message: 'Title cannot contain only whitespace.' }) // Prevents empty string with spaces
+  title: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(10)
+  @Matches(/\S/, { message: 'Description cannot contain only whitespace.' }) // Prevents empty string with spaces
+  description: string;
+}
 
 export class CreateProductDto {
   @IsNotEmpty()
-  @IsString()
-  @Length(3, 100)
-  title: string;
-
-  @IsOptional()
-  slug: string;
-
-  @IsNotEmpty()
-  @Type(() => Number)
-  @IsPositive({ message: 'Price must be a positive number' })
-  @Min(1, { message: 'Price must be at least 1' })
+  @IsNumber()
+  @Min(0)
   price: number;
 
   @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  quantity: number;
+
+  @IsOptional()
   @IsString()
-  @Length(10, 1000)
-  description: string;
+  @IsUrl({}, { message: 'Image must be a valid URL.' }) // Ensures image is a valid URL if provided
+  image?: string;
 
   @IsNotEmpty()
-  @Type(() => Number)
-  @IsPositive({ message: 'Quantity must be a positive number' })
-  @Min(1, { message: 'Quantity must be at least 1' })
-  quantity: number;
-
-  @IsOptional()
-  @IsUrl()
-  image: string;
-
-  @IsOptional()
-  imageId: string;
-}
-
-export class UpdateProductDto {
-  @IsOptional()
-  @Length(3, 100)
-  title: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsPositive({ message: 'Price must be a positive number' })
-  @Min(1, { message: 'Price must be at least 1' })
-  price: number;
-
-  @IsOptional()
-  @IsString()
-  @Length(10, 1000)
-  description: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsPositive({ message: 'Quantity must be a positive number' })
-  @Min(1, { message: 'Quantity must be at least 1' })
-  quantity: number;
-
-  @IsOptional()
-  @IsUrl()
-  image: string;
-
-  @IsOptional()
-  imageId: string;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductDetailDto)
+  @ArrayMinSize(1, { message: 'At least one product detail is required.' }) // Ensures at least one detail exists
+  details: ProductDetailDto[];
 }
