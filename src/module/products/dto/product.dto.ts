@@ -49,6 +49,10 @@ export class CreateProductDto {
   image?: string;
 
   @IsNotEmpty()
+  @IsString()
+  category: string;
+
+  @IsNotEmpty()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductDetailDto)

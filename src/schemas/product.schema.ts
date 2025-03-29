@@ -21,6 +21,9 @@ export class Product extends Document {
   @Prop()
   imageId: string;
 
+  @Prop()
+  category: string;
+
   // Add product details (translations)
   @Prop({
     type: [

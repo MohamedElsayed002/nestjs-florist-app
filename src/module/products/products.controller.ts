@@ -43,10 +43,17 @@ export class ProductController {
   @Get('all')
   async getAllProducts(
     @Query('lang') lang: string = 'en',
+    @Query('category') category: string = 'show',
   ): Promise<Array<ProductDocument>> {
-    return this.productService.getAllProducts(lang);
+    return this.productService.getAllProducts(lang, category);
   }
 
+  @Get('shop')
+  async getShopProducts(
+    @Query('lang') lang: string = 'en',
+  ): Promise<Array<ProductDocument>> {
+    return this.productService.getShopProducts(lang);
+  }
   @Get('get-single-product/:productId')
   async getSingleProduct(
     @Param('productId') productId: string,

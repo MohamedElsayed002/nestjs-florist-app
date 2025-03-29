@@ -1,12 +1,12 @@
 import { BadRequestException, Body, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import mongoose, { Model } from 'mongoose';
-import { Product, ProductDocument } from 'src/schemas/product.schema';
+import { Product, ProductDocument } from '../../schemas/product.schema';
 import { CreateProductDto } from './dto/product.dto';
 import {
   ProductDetail,
   ProductDetailDocument,
-} from 'src/schemas/product.detail.schema';
+} from '../../schemas/product.detail.schema';
 import { v2 as cloudinary } from 'cloudinary';
 import slugify from 'slugify';
 @Injectable()
@@ -32,6 +32,10 @@ export class ProductService {
       throw new BadRequestException(
         'Product must have exactly one Arabic and one English detail.',
       );
+    }
+
+    if (!createProductDto.category) {
+      throw new BadRequestException('Category is required');
     }
 
     // Generate slugs for both details
@@ -79,13 +83,24 @@ export class ProductService {
   }
 
   // Fetch all products with language filtering
-  async getAllProducts(lang: string): Promise<Array<ProductDocument>> {
+  async getAllProducts(
+    lang: string,
+    category: string,
+  ): Promise<Array<ProductDocument>> {
+    const filter = category ? { category } : {}; // Only filter by category if it's provided
     return this.productModel
-      .find()
+      .find(filter)
       .populate({
         path: 'details',
         match: { lang },
       })
+      .exec();
+  }
+
+  async getShopProducts(lang: string): Promise<Array<ProductDocument>> {
+    return this.productModel
+      .find({ category: 'shop' })
+      .populate({ path: 'details', match: { lang } })
       .exec();
   }
 
@@ -96,9 +111,12 @@ export class ProductService {
       match: { lang },
     });
 
-    if (!product) {
-      throw new BadRequestException('Product not found.');
+    if (!product || !product.details || product.details.length === 0) {
+      throw new BadRequestException(
+        'Product not found for the given language.',
+      );
     }
+
     return product;
   }
 
