@@ -32,8 +32,11 @@ export class CartController {
 
   @Get(':userId')
   @SetMetadata('roles', ['Admin', 'User'])
-  async getCart(@Param('userId') userId: string, @Query('lang') lang: string = 'en') {
-    return this.cartService.getCart(userId,lang);
+  async getCart(
+    @Param('userId') userId: string,
+    @Query('lang') lang: string = 'en',
+  ) {
+    return this.cartService.getCart(userId, lang);
   }
 
   @Delete('remove/:productId')

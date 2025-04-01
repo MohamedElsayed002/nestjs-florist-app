@@ -65,26 +65,25 @@ export class CartService {
   }
 
   async getCart(userId: string, lang: string): Promise<Cart> {
-    const cart = await this.cartModel
-      .findOne({ user: userId })
-      .populate({
-        path: 'cartItems.product',
-        populate: {
-          path: 'details',
-          match: { lang },
-        },
-      });
-  
+    const cart = await this.cartModel.findOne({ user: userId }).populate({
+      path: 'cartItems.product',
+      populate: {
+        path: 'details',
+        match: { lang },
+      },
+    });
+
     if (!cart) {
       throw new NotFoundException('Cart not found');
     }
-  
+
     // Ensure each product has details in the requested language
-    cart.cartItems = cart.cartItems.filter(item => item.product.details && item.product.details.length > 0);
-  
+    cart.cartItems = cart.cartItems.filter(
+      (item) => item.product.details && item.product.details.length > 0,
+    );
+
     return cart;
   }
-  
 
   async removeCart(
     userId: string,

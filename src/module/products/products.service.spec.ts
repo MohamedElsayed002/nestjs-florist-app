@@ -28,7 +28,6 @@ describe('ProductService', () => {
     findByIdAndUpdate: jest.fn(),
     findByIdAndDelete: jest.fn(),
     deleteMany: jest.fn(),
-
   };
 
   cloudinary = {
@@ -163,6 +162,4 @@ describe('ProductService', () => {
       ).rejects.toThrow('Product not found for the given language.');
     });
   });
-
-
 });
