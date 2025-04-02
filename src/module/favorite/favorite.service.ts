@@ -50,7 +50,7 @@ export class FavoriteService {
     }
   }
 
-  async getFavorite(userId: string, lang: string): Promise<Favorite[]> {
+  async getFavorite(userId: string, lang: string) {
     const favorites = await this.favoriteModel.find({ user: userId }).populate({
       path: 'products',
       populate: {
@@ -63,6 +63,7 @@ export class FavoriteService {
       throw new NotFoundException('No favorites found for this user.');
     }
 
-    return favorites;
+
+    return {message: favorites}
   }
 }
