@@ -64,27 +64,56 @@ export class CartService {
     return cart;
   }
 
-  async getCart(userId: string, lang: string): Promise<Cart> {
+  async getCart(userId: string, lang: string){
+    // Find the cart associated with the user
     const cart = await this.cartModel.findOne({ user: userId }).populate({
       path: 'cartItems.product',
       populate: {
         path: 'details',
-        match: { lang },
+        match: { lang }, // Ensure product details are filtered by language
       },
     });
-
+  
+    // Case 1: If no cart is found for the user, return an empty cart
     if (!cart) {
-      throw new NotFoundException('Cart not found');
+      return {
+        message: 'Cart not found',
+        cartItems: [],
+        totalPrice: 0,
+        totalPriceDiscount: 0,
+        id: null,
+      };
     }
-
-    // Ensure each product has details in the requested language
+  
+    // Case 2: Ensure each product has details in the requested language
     cart.cartItems = cart.cartItems.filter(
       (item) => item.product.details && item.product.details.length > 0,
     );
-
-    return cart;
+  
+    // Case 3: If the cart has no items after filtering, return a message with an empty cart
+    if (cart.cartItems.length === 0) {
+      return {
+        message: 'No items in the cart',
+        cartItems: [],
+        totalPrice: 0,
+        totalPriceDiscount: 0,
+        id: cart._id,
+      };
+    }
+  
+    // Case 4: If the cart has products, return the cart with the necessary details
+    const totalPrice = cart.cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    const totalPriceDiscount = 0; // You can implement logic for discounts if needed
+  
+    return {
+      message: 'Cart found',
+      cartItems: cart.cartItems,
+      totalPrice,
+      totalPriceDiscount,
+      id: cart._id,
+    };
   }
-
+  
   async removeCart(
     userId: string,
     productId: string,

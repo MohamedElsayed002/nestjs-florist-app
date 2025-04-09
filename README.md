@@ -172,3 +172,115 @@ async findAll(
     }
   ]
 }
+
+
+
+
+
+
+{
+  "message": "Cart not found",
+  "error": "Not Found",
+  "statusCode": 404
+}
+
+
+{
+  "_id": "67ea7e53c20464f0110f2e58",
+  "user": "67d1d7f0e32b4a36143aee61",
+  "cartItems": [
+    {
+      "product": {
+        "_id": "67e3426c3641252a2f4d7697",
+        "price": 94,
+        "quantity": 8,
+        "sold": 0,
+        "details": [
+          {
+            "_id": "67e3426c3641252a2f4d7698",
+            "lang": "en",
+            "title": "Euphoria",
+            "slug": "euphoria",
+            "description": "A state of pure joy and bliss, where happiness knows no limits.",
+            "__v": 0
+          }
+        ],
+        "createdAt": "2025-03-25T23:55:25.010Z",
+        "updatedAt": "2025-03-25T23:55:45.199Z",
+        "__v": 0,
+        "image": "https://res.cloudinary.com/doa5lqxcu/image/upload/v1742946944/products/tpzinuhn3kmsv48qpwr1.png",
+        "imageId": "products/tpzinuhn3kmsv48qpwr1",
+        "category": "shop",
+        "id": "67e3426c3641252a2f4d7697"
+      },
+      "quantity": 3,
+      "price": 282,
+      "_id": "67ea7e53c20464f0110f2e59",
+      "id": "67ea7e53c20464f0110f2e59"
+    },
+    {
+      "product": {
+        "_id": "67e342e43641252a2f4d76a4",
+        "price": 120,
+        "quantity": 30,
+        "sold": 0,
+        "details": [
+          {
+            "_id": "67e342e43641252a2f4d76a5",
+            "lang": "en",
+            "title": "Selenia",
+            "slug": "selenia",
+            "description": "A mystical name inspired by the moon, symbolizing serenity and magic",
+            "__v": 0
+          }
+        ],
+        "createdAt": "2025-03-25T23:57:25.464Z",
+        "updatedAt": "2025-03-25T23:57:45.015Z",
+        "__v": 0,
+        "image": "https://res.cloudinary.com/doa5lqxcu/image/upload/v1742947064/products/fkdtpttmlyv7ccxu0sqq.png",
+        "imageId": "products/fkdtpttmlyv7ccxu0sqq",
+        "category": "shop",
+        "id": "67e342e43641252a2f4d76a4"
+      },
+      "quantity": 1,
+      "price": 120,
+      "_id": "67ea7f01c20464f0110f2e6b",
+      "id": "67ea7f01c20464f0110f2e6b"
+    },
+    {
+      "product": {
+        "_id": "67e3416b08b5a34aea2343fc",
+        "price": 80,
+        "quantity": 2,
+        "sold": 0,
+        "details": [
+          {
+            "_id": "67e3416b08b5a34aea2343fd",
+            "lang": "en",
+            "title": "Aurora Classic",
+            "slug": "aurora-classic",
+            "description": "A timeless glow of enchanting lights dancing across the night sky.",
+            "__v": 0
+          }
+        ],
+        "createdAt": "2025-03-25T23:51:08.278Z",
+        "updatedAt": "2025-03-25T23:51:56.832Z",
+        "__v": 0,
+        "image": "https://res.cloudinary.com/doa5lqxcu/image/upload/v1742946716/products/wesocmdviubav4rxscxn.png",
+        "imageId": "products/wesocmdviubav4rxscxn",
+        "category": "shop",
+        "id": "67e3416b08b5a34aea2343fc"
+      },
+      "quantity": 8,
+      "price": 640,
+      "_id": "67ea7f70c20464f0110f2e77",
+      "id": "67ea7f70c20464f0110f2e77"
+    }
+  ],
+  "totalPrice": 1042,
+  "totalPriceDiscount": 0,
+  "createdAt": "2025-03-31T11:36:51.806Z",
+  "updatedAt": "2025-04-01T23:46:10.048Z",
+  "__v": 2,
+  "id": "67ea7e53c20464f0110f2e58"
+}
