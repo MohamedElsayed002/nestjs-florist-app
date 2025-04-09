@@ -60,10 +60,21 @@ export class FavoriteService {
     });
 
     if (!favorites || favorites.length === 0) {
-      throw new NotFoundException('No favorites found for this user.');
+      // Still using NotFoundException, but response is clean and structured
+      throw new NotFoundException({
+        success: false,
+        message: 'No favorites found for this user.',
+        data: null,
+      });
     }
 
-
-    return {message: favorites}
+    return {
+      success: true,
+      message:
+        favorites[0].products.length > 0
+          ? 'Favorites fetched successfully.'
+          : 'Favorites list is empty.',
+      data: favorites[0], // assuming 1 cart per user
+    };
   }
 }

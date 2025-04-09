@@ -129,3 +129,46 @@ async findAll(
             .exec();
     }
 ```
+
+{
+  "message": "No favorites found for this user.",
+  "error": "Not Found",
+  "statusCode": 404
+}
+
+
+{
+  "message": [
+    {
+      "_id": "67ebf799448b2ddc8db8013e",
+      "user": "67d1d7f0e32b4a36143aee61",
+      "products": [],
+      "__v": 95
+    }
+  ]
+}
+
+{
+  "message": [
+    {
+      "_id": "67ebf799448b2ddc8db8013e",
+      "user": "67d1d7f0e32b4a36143aee61",
+      "products": [
+        {
+          "_id": "67dc62a600c3c20f18414641",
+          "price": 100,
+          "quantity": 30,
+          "sold": 0,
+          "details": [],
+          "createdAt": "2025-03-20T18:47:02.898Z",
+          "updatedAt": "2025-03-20T18:48:32.783Z",
+          "__v": 0,
+          "image": "https://res.cloudinary.com/doa5lqxcu/image/upload/v1742496512/products/iued2cpax9bo5oxxqde1.png",
+          "imageId": "products/iued2cpax9bo5oxxqde1",
+          "category": "show"
+        }
+      ],
+      "__v": 96
+    }
+  ]
+}
