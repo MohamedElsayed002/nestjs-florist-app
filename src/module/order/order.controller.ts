@@ -9,6 +9,7 @@ import {
   Put,
   Delete,
   SetMetadata,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
 import { OrderService } from './order.service';
@@ -25,9 +26,9 @@ export class OrderController {
 
   @Post('add-stripe')
   @SetMetadata('roles', ['User', 'Admin'])
-  async createOrderStripe(@Req() req: any) {
+  async createOrderStripe(@Req() req: any, @Query('lang') lang: string = 'en') {
     const userId = req.user._id;
-    return this.orderService.createOrderStripe(userId);
+    return this.orderService.createOrderStripe(userId, lang);
   }
 
   // ✅ Create a new order (User)

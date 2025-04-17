@@ -21,7 +21,8 @@ export class OrderService {
     @InjectModel(Product.name) private productModel: Model<Product>,
   ) {}
 
-  async createOrderStripe(userId: string) {
+  // Pay online
+  async createOrderStripe(userId: string, lang) {
     const cart = await this.cartModel
       .findOne({ user: userId })
       .populate('cartItems.product');
@@ -47,7 +48,7 @@ export class OrderService {
         payment_method_types: ['card'],
         line_items,
         mode: 'payment',
-        success_url: `${process.env.CLIENT_URL}/`,
+        success_url: `${process.env.CLIENT_URL}/${lang}`,
         cancel_url: `${process.env.CLIENT_URL}/cancel`,
         metadata: {
           userId: userId.toString(),
@@ -58,9 +59,12 @@ export class OrderService {
         user: userId,
         cartItems: cart.cartItems,
         totalOrderPrice: cart.totalPrice,
+        paymentMethod: 'Card',
+        isPaid: true,
+        paidAt: new Date(),
         // I send static data here, because I'm not planning and the beginning to do it
-        // and I need to make more work on stripe.
-        // TODO: In the future 😘
+        // and I need to make it in the future.
+        // TODO
         shippingAddress: {
           city: 'city',
           street: 'Sedi bshr',
@@ -90,7 +94,7 @@ export class OrderService {
     }
   }
 
-  // ✅ Create an order
+  // Order on Delivery
   async createOrder(
     userId: string,
     shippingAddress: ShippingAddressDto,
@@ -104,6 +108,7 @@ export class OrderService {
     const order = new this.orderModel({
       user: userId,
       cartItems: cart.cartItems,
+      paymentMethod: 'Cash',
       totalOrderPrice: cart.totalPrice,
       shippingAddress,
     });
