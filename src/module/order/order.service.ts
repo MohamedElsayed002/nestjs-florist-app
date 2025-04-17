@@ -11,6 +11,7 @@ import { Order } from 'src/schemas/order.schema';
 import { Cart } from 'src/schemas/cart.schema';
 import { Product } from 'src/schemas/product.schema';
 import { ShippingAddressDto, statusShippingDto } from './dto/create.order.dto';
+import stripe from 'stripe';
 
 @Injectable()
 export class OrderService {
@@ -19,6 +20,75 @@ export class OrderService {
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
     @InjectModel(Product.name) private productModel: Model<Product>,
   ) {}
+
+  async createOrderStripe(userId: string) {
+    const cart = await this.cartModel
+      .findOne({ user: userId })
+      .populate('cartItems.product');
+    if (!cart || cart.cartItems.length === 0) {
+      throw new NotFoundException('Cart not found or empty');
+    }
+
+    const line_items = cart.cartItems.map((item) => ({
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: 'Product 1',
+        },
+        unit_amount: Math.round(item.product.price * 100), // price per unit
+      },
+      quantity: item.quantity,
+    }));
+
+    try {
+      const session = await new stripe.Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: '2025-02-24.acacia',
+      }).checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items,
+        mode: 'payment',
+        success_url: `${process.env.CLIENT_URL}/`,
+        cancel_url: `${process.env.CLIENT_URL}/cancel`,
+        metadata: {
+          userId: userId.toString(),
+        },
+      });
+
+      const order = new this.orderModel({
+        user: userId,
+        cartItems: cart.cartItems,
+        totalOrderPrice: cart.totalPrice,
+        // I send static data here, because I'm not planning and the beginning to do it
+        // and I need to make more work on stripe.
+        // TODO: In the future 😘
+        shippingAddress: {
+          city: 'city',
+          street: 'Sedi bshr',
+          phone: '+201093588197',
+        },
+      });
+
+      await order.save();
+
+      let bulkUpdates = cart.cartItems.map((item) => ({
+        updateOne: {
+          filter: { _id: item.product },
+          update: { $inc: { quantity: -item.quantity, sold: item.quantity } },
+        },
+      }));
+
+      // Perform the bulk update for product stock
+      await this.productModel.bulkWrite(bulkUpdates);
+
+      // Delete the cart immediately after creating the session
+      await this.cartModel.findByIdAndDelete(cart._id);
+
+      return { url: session.url };
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Stripe session creation failed');
+    }
+  }
 
   // ✅ Create an order
   async createOrder(

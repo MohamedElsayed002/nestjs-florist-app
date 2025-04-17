@@ -64,7 +64,7 @@ export class CartService {
     return cart;
   }
 
-  async getCart(userId: string, lang: string){
+  async getCart(userId: string, lang: string) {
     // Find the cart associated with the user
     const cart = await this.cartModel.findOne({ user: userId }).populate({
       path: 'cartItems.product',
@@ -73,7 +73,7 @@ export class CartService {
         match: { lang }, // Ensure product details are filtered by language
       },
     });
-  
+
     // Case 1: If no cart is found for the user, return an empty cart
     if (!cart) {
       return {
@@ -84,12 +84,12 @@ export class CartService {
         id: null,
       };
     }
-  
+
     // Case 2: Ensure each product has details in the requested language
     cart.cartItems = cart.cartItems.filter(
       (item) => item.product.details && item.product.details.length > 0,
     );
-  
+
     // Case 3: If the cart has no items after filtering, return a message with an empty cart
     if (cart.cartItems.length === 0) {
       return {
@@ -100,11 +100,14 @@ export class CartService {
         id: cart._id,
       };
     }
-  
+
     // Case 4: If the cart has products, return the cart with the necessary details
-    const totalPrice = cart.cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    const totalPrice = cart.cartItems.reduce(
+      (total, item) => total + item.product.price * item.quantity,
+      0,
+    );
     const totalPriceDiscount = 0; // You can implement logic for discounts if needed
-  
+
     return {
       message: 'Cart found',
       cartItems: cart.cartItems,
@@ -113,7 +116,7 @@ export class CartService {
       id: cart._id,
     };
   }
-  
+
   async removeCart(
     userId: string,
     productId: string,

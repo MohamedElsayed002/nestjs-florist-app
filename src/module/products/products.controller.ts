@@ -44,8 +44,9 @@ export class ProductController {
   async getAllProducts(
     @Query('lang') lang: string = 'en',
     @Query('category') category: string = 'show',
+    @Query('search') search: string = '',
   ): Promise<Array<ProductDocument>> {
-    return this.productService.getAllProducts(lang, category);
+    return this.productService.getAllProducts(lang, category, search);
   }
 
   @Get('shop')

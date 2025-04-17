@@ -81,20 +81,89 @@ export class ProductService {
     await product.save();
     return product;
   }
-
-  // Fetch all products with language filtering
   async getAllProducts(
     lang: string,
-    category: string,
+    category: string = '', // Optional, defaults to empty string
+    search: string = '',
   ): Promise<Array<ProductDocument>> {
-    const filter = category ? { category } : {}; // Only filter by category if it's provided
-    return this.productModel
-      .find(filter)
-      .populate({
-        path: 'details',
-        match: { lang },
-      })
-      .exec();
+    try {
+      const validLangs = await this.productDetailModel.distinct('lang').exec();
+      if (!validLangs.includes(lang)) {
+        console.warn(`Invalid lang: ${lang}. Valid languages: ${validLangs}`);
+        return [];
+      }
+
+      // Step 2: Query ProductDetail for matching title and lang
+      const detailQuery: any = { lang };
+      const trimmedSearch = search?.trim() || '';
+      if (trimmedSearch) {
+        detailQuery.title = { $regex: trimmedSearch, $options: 'i' };
+      }
+
+      const productDetails = await this.productDetailModel
+        .find(detailQuery)
+        .exec();
+
+      // Step 3: Get ProductDetail IDs
+      const detailIds = productDetails.map((detail) => detail._id);
+
+      // Step 4: Build Product filter
+      const filter: any = {};
+      if (category?.trim()) {
+        const trimmedCategory = category.trim();
+        const validCategories = await this.productModel
+          .distinct('category')
+          .exec();
+        if (!validCategories.includes(trimmedCategory)) {
+          console.warn(
+            `Invalid category: ${trimmedCategory}. Valid categories: ${validCategories}`,
+          );
+        } else {
+          filter.category = trimmedCategory;
+          const categoryCheck = await this.productModel
+            .countDocuments({ category: trimmedCategory })
+            .exec();
+          if (categoryCheck === 0) {
+            console.warn(`No products found with category: ${trimmedCategory}`);
+          }
+        }
+      }
+      if (trimmedSearch && detailIds.length > 0) {
+        filter.details = { $in: detailIds };
+      } else if (trimmedSearch && detailIds.length === 0) {
+        console.log(
+          'No matching ProductDetails found for search, returning empty array',
+        );
+        return [];
+      }
+
+      // Step 5: Query Products and populate details
+      const products = await this.productModel
+        .find(filter)
+        .populate({
+          path: 'details',
+          match: { lang },
+        })
+        .exec();
+
+      // Step 6: Filter out products with empty details
+      const filteredProducts = products.filter(
+        (product) => product.details.length > 0,
+      );
+
+      if (filteredProducts.length === 0 && products.length > 0) {
+        console.warn(
+          'All products filtered out due to empty details after population',
+        );
+      } else if (filteredProducts.length === 0) {
+        console.warn('No products found matching the criteria');
+      }
+
+      return filteredProducts;
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      throw new Error(`Failed to fetch products: ${error.message}`);
+    }
   }
 
   async getShopProducts(lang: string): Promise<Array<ProductDocument>> {

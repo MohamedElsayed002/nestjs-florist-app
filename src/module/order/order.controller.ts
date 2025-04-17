@@ -23,6 +23,13 @@ import {
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
+  @Post('add-stripe')
+  @SetMetadata('roles', ['User', 'Admin'])
+  async createOrderStripe(@Req() req: any) {
+    const userId = req.user._id;
+    return this.orderService.createOrderStripe(userId);
+  }
+
   // ✅ Create a new order (User)
   @Post('add')
   @SetMetadata('roles', ['Admin', 'User'])
