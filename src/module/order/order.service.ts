@@ -132,11 +132,35 @@ export class OrderService {
   }
 
   // ✅ Get all orders (Admin only)
-  async getAllOrders(): Promise<Order[]> {
-    return await this.orderModel
-      .find()
-      .populate('user', 'email name')
-      .populate('cartItems.product');
+  async getAllOrders(
+    page = 1,
+    limit = 10,
+  ): Promise<{
+    data: Order[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const [orders, total] = await Promise.all([
+      this.orderModel
+        .find()
+        .skip(skip)
+        .limit(limit)
+        .populate('user', 'email name')
+        .populate('cartItems.product'),
+      this.orderModel.countDocuments(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: orders,
+      total,
+      page,
+      totalPages,
+    };
   }
 
   // ✅ Get orders of a specific user

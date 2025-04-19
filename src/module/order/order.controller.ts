@@ -45,8 +45,14 @@ export class OrderController {
   // ✅ Get all orders (Admin only)
   @Get('')
   @SetMetadata('roles', ['Admin'])
-  async getAllOrders() {
-    return this.orderService.getAllOrders();
+  async getAllOrders(
+    @Query('page') page: string,
+    @Query('limit') limit: string,
+  ) {
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+
+    return this.orderService.getAllOrders(pageNumber, limitNumber);
   }
 
   // ✅ Get all orders of the logged-in user (User only)
