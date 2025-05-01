@@ -7,7 +7,6 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Auth } from 'src/schemas/auth.schema';
 import { Favorite, FavoriteDocument } from 'src/schemas/favorite.schema';
-import { Product } from 'src/schemas/product.schema';
 
 @Injectable()
 export class FavoriteService {
@@ -35,7 +34,7 @@ export class FavoriteService {
     const index = favorite.products.findIndex(
       (product) => product.toString() === productId,
     );
-    const productObjectId = new Types.ObjectId(productId); // Convert productId to ObjectId
+    // const productObjectId = new Types.ObjectId(productId); // Convert productId to ObjectId
 
     if (index === -1) {
       // Product not found, add it

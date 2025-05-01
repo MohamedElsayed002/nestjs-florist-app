@@ -62,6 +62,8 @@ export class Order extends Document {
 
   @Prop({ type: Date })
   deliveredAt: Date;
+
+  createdAt?: Date; // Optional field for TypeScript type checking
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

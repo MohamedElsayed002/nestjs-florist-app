@@ -5,6 +5,7 @@ import { Provider } from '@nestjs/common';
 export const CloudinaryProvider: Provider = {
   provide: 'CLOUDINARY',
   useFactory: (configService: ConfigService) => {
+    console.log(configService);
     return cloudinary.config({
       cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
       api_key: process.env.CLOUDINARY_API_KEY,

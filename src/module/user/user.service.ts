@@ -11,11 +11,16 @@ import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { EmailService } from 'src/service/email.provider';
+import { Product } from 'src/schemas/product.schema';
+import { Order } from 'src/schemas/order.schema';
+import { formatDate } from 'utils';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(Auth.name) private authModel: Model<Auth>,
+    @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Order.name) private orderModel: Model<Order>,
     private authService: AuthService,
     private emailService: EmailService,
   ) {}
@@ -35,6 +40,45 @@ export class UserService {
     await user.save();
     await this.emailService.sendVerificationCode(email, verificationCode);
     return { message: 'Verification code send to your email' };
+  }
+
+  async adminStats() {
+    const users = await this.authModel.countDocuments();
+    const products = await this.productModel.countDocuments();
+    const orders = await this.orderModel
+      .find({ isPaid: true })
+      .countDocuments();
+    return { users, products, orders };
+  }
+
+  // Chart data [{"date": "March 2025", "count": 3},{"date": "April 2025",count:9}]
+  async fetchChartData() {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 6);
+    const sixMonthsAgo = date;
+
+    const orders = await this.orderModel
+      .find({
+        createdAt: { $gte: sixMonthsAgo },
+        isPaid: true,
+      })
+      .sort({ createdAt: 'asc' })
+      .lean();
+
+    const ordersPerMonth = orders.reduce(
+      (total, current) => {
+        const date = formatDate(current?.createdAt, true);
+        const exitingEntry = total.find((entry) => entry.date === date);
+        if (exitingEntry) {
+          exitingEntry.count += 1;
+        } else {
+          total.push({ date, count: 1 });
+        }
+        return total;
+      },
+      [] as Array<{ date: string; count: number }>,
+    );
+    return ordersPerMonth;
   }
 
   async verifyCode(email: string, code: string): Promise<{ message: string }> {

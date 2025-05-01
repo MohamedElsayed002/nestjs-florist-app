@@ -1,6 +1,5 @@
 import {
   IsBoolean,
-  isBoolean,
   IsDate,
   IsMongoId,
   IsNotEmpty,

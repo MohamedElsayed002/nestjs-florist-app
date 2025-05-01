@@ -17,7 +17,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ProductService } from './products.service';
-import { CreateProductDto, ProductDetailDto } from './dto/product.dto';
+import { CreateProductDto } from './dto/product.dto';
 import { ProductDocument } from 'src/schemas/product.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';

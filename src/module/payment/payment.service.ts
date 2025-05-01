@@ -40,6 +40,7 @@ export class PaymentService {
 
       return { clientSecret: paymentIntent.client_secret };
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException('Error creating payment intent');
     }
   }

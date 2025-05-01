@@ -43,6 +43,20 @@ export class UserController {
     return this.userService.updateUser(id, updateUser);
   }
 
+  @Get('admin-stats')
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['Admin'])
+  async adminStats() {
+    return this.userService.adminStats();
+  }
+
+  @Get('fetch-chart-data')
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['Admin'])
+  async fetchChartDate() {
+    return this.userService.fetchChartData();
+  }
+
   @UseGuards(AuthGuard)
   @SetMetadata('roles', ['Admin', 'User'])
   @Delete(':id')

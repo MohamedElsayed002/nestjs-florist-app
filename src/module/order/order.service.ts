@@ -74,7 +74,7 @@ export class OrderService {
 
       await order.save();
 
-      let bulkUpdates = cart.cartItems.map((item) => ({
+      const bulkUpdates = cart.cartItems.map((item) => ({
         updateOne: {
           filter: { _id: item.product },
           update: { $inc: { quantity: -item.quantity, sold: item.quantity } },
@@ -117,7 +117,7 @@ export class OrderService {
 
     // If order created successfully, update stock & delete cart
     if (order) {
-      let bulkUpdates = cart.cartItems.map((item) => ({
+      const bulkUpdates = cart.cartItems.map((item) => ({
         updateOne: {
           filter: { _id: item.product },
           update: { $inc: { quantity: -item.quantity, sold: item.quantity } },

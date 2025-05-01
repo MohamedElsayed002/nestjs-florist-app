@@ -13,11 +13,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
 import { OrderService } from './order.service';
-import {
-  isMongoID,
-  ShippingAddressDto,
-  statusShippingDto,
-} from './dto/create.order.dto';
+import { ShippingAddressDto, statusShippingDto } from './dto/create.order.dto';
 
 @Controller('order')
 @UseGuards(AuthGuard) // Protect routes

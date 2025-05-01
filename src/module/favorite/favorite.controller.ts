@@ -2,7 +2,6 @@ import {
   Controller,
   Post,
   Param,
-  Body,
   UseGuards,
   SetMetadata,
   Req,
