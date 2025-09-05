@@ -66,7 +66,6 @@ export class AuthService {
   }
 
   async findById(id: string): Promise<Auth | null> {
-    console.log(`Finding user with ID: ${id}`);
     return await this.authModel.findById(id); // ✅ Ensure async/await is used
   }
 }

@@ -23,7 +23,7 @@ export class UserService {
     @InjectModel(Order.name) private orderModel: Model<Order>,
     private authService: AuthService,
     private emailService: EmailService,
-  ) {}
+  ) { }
 
   async forgotPassword(email: string): Promise<{ message: string }> {
     const user = await this.authModel.findOne({ email });
@@ -43,12 +43,63 @@ export class UserService {
   }
 
   async adminStats() {
+    // Basic counts
     const users = await this.authModel.countDocuments();
     const products = await this.productModel.countDocuments();
-    const orders = await this.orderModel
+    const totalOrders = await this.orderModel.countDocuments();
+    const paidOrders = await this.orderModel
       .find({ isPaid: true })
       .countDocuments();
-    return { users, products, orders };
+
+    // Revenue calculations
+    const totalRevenue = await this.calculateTotalRevenue();
+    const monthlyRevenue = await this.calculateMonthlyRevenue();
+    const averageOrderValue = totalRevenue / (paidOrders || 1);
+
+    // Top customers
+    const topCustomers = await this.getTopCustomers(5);
+
+    // Product performance
+    const topProducts = await this.getTopSellingProducts(5);
+    const lowStockProducts = await this.getLowStockProducts();
+
+    // Order status distribution
+    const orderStatusDistribution = await this.getOrderStatusDistribution();
+
+    // Recent activity
+    const recentOrders = await this.getRecentOrders(10);
+    const newUsersThisMonth = await this.getNewUsersThisMonth();
+
+    // Conversion metrics
+    const conversionRate = (paidOrders / totalOrders) * 100;
+
+    return {
+      // Basic metrics
+      users,
+      products,
+      totalOrders,
+      paidOrders,
+
+      // Revenue metrics
+      totalRevenue,
+      monthlyRevenue,
+      averageOrderValue: Math.round(averageOrderValue * 100) / 100,
+
+      // Customer insights
+      topCustomers,
+      newUsersThisMonth,
+
+      // Product insights
+      topProducts,
+      lowStockProducts,
+
+      // Order insights
+      orderStatusDistribution,
+      recentOrders,
+
+      // Performance metrics
+      conversionRate: Math.round(conversionRate * 100) / 100,
+    };
   }
 
   // Chart data [{"date": "March 2025", "count": 3},{"date": "April 2025",count:9}]
@@ -177,5 +228,394 @@ export class UserService {
     await this.authModel.findByIdAndDelete(targetUserId);
 
     return { message: 'user deleted successfully' };
+  }
+
+  // ========== ADMIN ANALYTICS HELPER METHODS ==========
+
+  /**
+   * Calculate total revenue from all paid orders
+   */
+  private async calculateTotalRevenue(): Promise<number> {
+    const result = await this.orderModel.aggregate([
+      { $match: { isPaid: true } },
+      { $group: { _id: null, total: { $sum: '$totalOrderPrice' } } }
+    ]);
+    return result.length > 0 ? result[0].total : 0;
+  }
+
+  /**
+   * Calculate revenue for current month
+   */
+  private async calculateMonthlyRevenue(): Promise<number> {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const result = await this.orderModel.aggregate([
+      {
+        $match: {
+          isPaid: true,
+          createdAt: { $gte: startOfMonth }
+        }
+      },
+      { $group: { _id: null, total: { $sum: '$totalOrderPrice' } } }
+    ]);
+    return result.length > 0 ? result[0].total : 0;
+  }
+
+  /**
+   * Get top customers by total spending
+   */
+  private async getTopCustomers(limit: number = 5) {
+    return await this.orderModel.aggregate([
+      { $match: { isPaid: true } },
+      {
+        $group: {
+          _id: '$user',
+          totalSpent: { $sum: '$totalOrderPrice' },
+          orderCount: { $sum: 1 },
+          lastOrderDate: { $max: '$createdAt' }
+        }
+      },
+      {
+        $lookup: {
+          from: 'auths',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      { $unwind: '$userInfo' },
+      {
+        $project: {
+          userId: '$_id',
+          name: '$userInfo.name',
+          email: '$userInfo.email',
+          totalSpent: 1,
+          orderCount: 1,
+          lastOrderDate: 1
+        }
+      },
+      { $sort: { totalSpent: -1 } },
+      { $limit: limit }
+    ]);
+  }
+
+  /**
+   * Get top selling products by quantity sold
+   */
+  private async getTopSellingProducts(limit: number = 5) {
+    return await this.orderModel.aggregate([
+      { $match: { isPaid: true } },
+      { $unwind: '$cartItems' },
+      {
+        $group: {
+          _id: '$cartItems.product',
+          totalQuantitySold: { $sum: '$cartItems.quantity' },
+          totalRevenue: { $sum: { $multiply: ['$cartItems.quantity', '$cartItems.price'] } },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      { $unwind: '$productInfo' },
+      {
+        $lookup: {
+          from: 'productdetails',
+          localField: 'productInfo.details',
+          foreignField: '_id',
+          as: 'productDetails'
+        }
+      },
+      {
+        $project: {
+          productId: '$_id',
+          productName: { $arrayElemAt: ['$productDetails.title', 0] },
+          currentPrice: '$productInfo.price',
+          currentStock: '$productInfo.quantity',
+          totalQuantitySold: 1,
+          totalRevenue: 1,
+          orderCount: 1
+        }
+      },
+      { $sort: { totalQuantitySold: -1 } },
+      { $limit: limit }
+    ]);
+  }
+
+  /**
+   * Get products with low stock (less than 10 items)
+   */
+  private async getLowStockProducts() {
+    return await this.productModel.aggregate([
+      { $match: { quantity: { $lt: 10 } } },
+      {
+        $lookup: {
+          from: 'productdetails',
+          localField: 'details',
+          foreignField: '_id',
+          as: 'productDetails'
+        }
+      },
+      {
+        $project: {
+          productId: '$_id',
+          productName: { $arrayElemAt: ['$productDetails.title', 0] },
+          currentStock: '$quantity',
+          price: 1,
+          category: 1
+        }
+      },
+      { $sort: { quantity: 1 } }
+    ]);
+  }
+
+  /**
+   * Get order status distribution
+   */
+  private async getOrderStatusDistribution() {
+    return await this.orderModel.aggregate([
+      {
+        $group: {
+          _id: {
+            isPaid: '$isPaid',
+            isDelivered: '$isDelivered',
+            paymentStatus: '$paymentStatus'
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          status: {
+            $cond: {
+              if: { $and: ['$_id.isPaid', '$_id.isDelivered'] },
+              then: 'Delivered',
+              else: {
+                $cond: {
+                  if: '$_id.isPaid',
+                  then: 'Paid',
+                  else: {
+                    $cond: {
+                      if: { $eq: ['$_id.paymentStatus', 'failed'] },
+                      then: 'Failed',
+                      else: 'Pending'
+                    }
+                  }
+                }
+              }
+            }
+          },
+          count: 1
+        }
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: '$count' }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+  }
+
+  /**
+   * Get recent orders with user information
+   */
+  private async getRecentOrders(limit: number = 10) {
+    return await this.orderModel.aggregate([
+      { $sort: { createdAt: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'auths',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'userInfo'
+        }
+      },
+      { $unwind: '$userInfo' },
+      {
+        $project: {
+          orderId: '$_id',
+          customerName: '$userInfo.name',
+          customerEmail: '$userInfo.email',
+          totalAmount: '$totalOrderPrice',
+          isPaid: 1,
+          isDelivered: 1,
+          paymentMethod: 1,
+          createdAt: 1,
+          itemCount: { $size: '$cartItems' }
+        }
+      }
+    ]);
+  }
+
+  /**
+   * Get count of new users registered this month
+   */
+  private async getNewUsersThisMonth(): Promise<number> {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    return await this.authModel.countDocuments({
+      createdAt: { $gte: startOfMonth }
+    });
+  }
+
+  /**
+   * Get detailed revenue analytics for charts
+   */
+  async getRevenueAnalytics() {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    // Monthly revenue data
+    const monthlyRevenue = await this.orderModel.aggregate([
+      {
+        $match: {
+          isPaid: true,
+          createdAt: { $gte: sixMonthsAgo }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          revenue: { $sum: '$totalOrderPrice' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          date: {
+            $dateFromParts: {
+              year: '$_id.year',
+              month: '$_id.month',
+              day: 1
+            }
+          },
+          revenue: 1,
+          orderCount: 1
+        }
+      },
+      { $sort: { date: 1 } }
+    ]);
+
+    // Daily revenue for current month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const dailyRevenue = await this.orderModel.aggregate([
+      {
+        $match: {
+          isPaid: true,
+          createdAt: { $gte: startOfMonth }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+            day: { $dayOfMonth: '$createdAt' }
+          },
+          revenue: { $sum: '$totalOrderPrice' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          date: {
+            $dateFromParts: {
+              year: '$_id.year',
+              month: '$_id.month',
+              day: '$_id.day'
+            }
+          },
+          revenue: 1,
+          orderCount: 1
+        }
+      },
+      { $sort: { date: 1 } }
+    ]);
+
+    return {
+      monthlyRevenue,
+      dailyRevenue
+    };
+  }
+
+  /**
+   * Get customer analytics
+   */
+  async getCustomerAnalytics() {
+    // Customer acquisition over time
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const customerAcquisition = await this.authModel.aggregate([
+      { $match: { createdAt: { $gte: sixMonthsAgo } } },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' }
+          },
+          newCustomers: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          date: {
+            $dateFromParts: {
+              year: '$_id.year',
+              month: '$_id.month',
+              day: 1
+            }
+          },
+          newCustomers: 1
+        }
+      },
+      { $sort: { date: 1 } }
+    ]);
+
+    // Customer lifetime value distribution
+    const customerLTV = await this.orderModel.aggregate([
+      { $match: { isPaid: true } },
+      {
+        $group: {
+          _id: '$user',
+          totalSpent: { $sum: '$totalOrderPrice' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      {
+        $bucket: {
+          groupBy: '$totalSpent',
+          boundaries: [0, 50, 100, 200, 500, 1000, Infinity],
+          default: 'Other',
+          output: {
+            count: { $sum: 1 },
+            avgOrderCount: { $avg: '$orderCount' }
+          }
+        }
+      }
+    ]);
+
+    return {
+      customerAcquisition,
+      customerLTV
+    };
   }
 }

@@ -10,7 +10,10 @@ import { Model } from 'mongoose';
 import { Order } from 'src/schemas/order.schema';
 import { Cart } from 'src/schemas/cart.schema';
 import { Product } from 'src/schemas/product.schema';
+import { Auth } from 'src/schemas/auth.schema';
+import { ProductDetail } from 'src/schemas/product.detail.schema';
 import { ShippingAddressDto, statusShippingDto } from './dto/create.order.dto';
+import { EmailService } from 'src/service/email.provider';
 import stripe from 'stripe';
 
 @Injectable()
@@ -19,7 +22,9 @@ export class OrderService {
     @InjectModel(Order.name) private orderModel: Model<Order>,
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
     @InjectModel(Product.name) private productModel: Model<Product>,
-  ) {}
+    @InjectModel(Auth.name) private authModel: Model<Auth>,
+    private emailService: EmailService,
+  ) { }
 
   // Pay online
   async createOrderStripe(userId: string, lang) {
@@ -28,6 +33,12 @@ export class OrderService {
       .populate('cartItems.product');
     if (!cart || cart.cartItems.length === 0) {
       throw new NotFoundException('Cart not found or empty');
+    }
+
+    // Get user information
+    const user = await this.authModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
     const line_items = cart.cartItems.map((item) => ({
@@ -74,6 +85,15 @@ export class OrderService {
 
       await order.save();
 
+      // Populate the order with product details for email
+      await order.populate({
+        path: 'cartItems.product',
+        populate: {
+          path: 'details',
+          model: 'ProductDetail'
+        }
+      });
+
       const bulkUpdates = cart.cartItems.map((item) => ({
         updateOne: {
           filter: { _id: item.product },
@@ -87,6 +107,33 @@ export class OrderService {
       // Delete the cart immediately after creating the session
       await this.cartModel.findByIdAndDelete(cart._id);
 
+      // Send order receipt email
+      try {
+        const orderReceiptData = {
+          orderId: order._id.toString(),
+          user: {
+            _id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+          },
+          cartItems: order.cartItems,
+          totalOrderPrice: order.totalOrderPrice,
+          paymentMethod: order.paymentMethod,
+          isPaid: order.isPaid,
+          isDelivered: order.isDelivered,
+          shippingAddress: order.shippingAddress,
+          createdAt: order.createdAt,
+          deliveredAt: order.deliveredAt,
+          paidAt: order.paidAt,
+        };
+
+
+        await this.emailService.sendOrderReceipt(user.email, orderReceiptData);
+      } catch (emailError) {
+        console.error('Failed to send order receipt email:', emailError);
+        // Don't throw error here to avoid breaking the order creation
+      }
+
       return { url: session.url };
     } catch (error) {
       console.log(error);
@@ -99,9 +146,18 @@ export class OrderService {
     userId: string,
     shippingAddress: ShippingAddressDto,
   ): Promise<Order> {
-    const cart = await this.cartModel.findOne({ user: userId });
+    const cart = await this.cartModel
+      .findOne({ user: userId })
+      .populate('cartItems.product');
+
     if (!cart) {
       throw new NotFoundException('Cart not found');
+    }
+
+    // Get user information
+    const user = await this.authModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
     // Create a new order
@@ -115,6 +171,15 @@ export class OrderService {
 
     await order.save();
 
+    // Populate the order with product details for email
+    await order.populate({
+      path: 'cartItems.product',
+      populate: {
+        path: 'details',
+        model: 'ProductDetail'
+      }
+    });
+
     // If order created successfully, update stock & delete cart
     if (order) {
       const bulkUpdates = cart.cartItems.map((item) => ({
@@ -126,6 +191,33 @@ export class OrderService {
 
       await this.productModel.bulkWrite(bulkUpdates);
       await this.cartModel.findByIdAndDelete(cart._id);
+
+      // Send order receipt email
+      try {
+        const orderReceiptData = {
+          orderId: order._id.toString(),
+          user: {
+            _id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+          },
+          cartItems: order.cartItems,
+          totalOrderPrice: order.totalOrderPrice,
+          paymentMethod: order.paymentMethod,
+          isPaid: order.isPaid,
+          isDelivered: order.isDelivered,
+          shippingAddress: order.shippingAddress,
+          createdAt: order.createdAt,
+          deliveredAt: order.deliveredAt,
+          paidAt: order.paidAt,
+        };
+
+        console.log('Cash order - cartItems with populated products:', JSON.stringify(order.cartItems, null, 2));
+        await this.emailService.sendOrderReceipt(user.email, orderReceiptData);
+      } catch (emailError) {
+        console.error('Failed to send order receipt email:', emailError);
+        // Don't throw error here to avoid breaking the order creation
+      }
     }
 
     return order;

@@ -16,7 +16,7 @@ import { UpdateUserDto } from './dto/user.dto';
 
 @Controller('users')
 export class UserController {
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService) { }
 
   @Post('forgot-password')
   async forgotPassword(@Body('email') email: string) {
@@ -55,6 +55,20 @@ export class UserController {
   @SetMetadata('roles', ['Admin'])
   async fetchChartDate() {
     return this.userService.fetchChartData();
+  }
+
+  @Get('revenue-analytics')
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['Admin'])
+  async getRevenueAnalytics() {
+    return this.userService.getRevenueAnalytics();
+  }
+
+  @Get('customer-analytics')
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['Admin'])
+  async getCustomerAnalytics() {
+    return this.userService.getCustomerAnalytics();
   }
 
   @UseGuards(AuthGuard)
