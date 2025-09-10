@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { FavoriteService } from './favorite.service';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
+import { TestUserGuard } from 'src/gurad/test-user/test-user.guard';
 
 @Controller('favorite')
 @UseGuards(AuthGuard) // Protect routes
@@ -17,6 +18,7 @@ export class FavoriteController {
   constructor(private readonly favoriteService: FavoriteService) {}
 
   @Post(':productId')
+  @UseGuards(TestUserGuard)
   @SetMetadata('roles', ['Admin', 'User'])
   async toggleFavorite(@Param('productId') productId: string, @Req() req: any) {
     return this.favoriteService.toggleFavorite(req.user._id, productId);

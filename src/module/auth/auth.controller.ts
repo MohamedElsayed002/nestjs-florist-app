@@ -14,7 +14,7 @@ import { AuthGuard } from 'src/gurad/auth/auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @UseGuards(AuthGuard)
   @SetMetadata('roles', ['Admin'])
@@ -34,6 +34,12 @@ export class AuthController {
   ): Promise<{ access_token: string }> {
     return this.authService.loginUser(loginUser);
   }
+
+  @Post('test-login')
+  async testLogin(): Promise<{ access_token: string }> {
+    return this.authService.testLoginAdmin();
+  }
+
 
   @UseGuards(AuthGuard)
   @Get('profile')

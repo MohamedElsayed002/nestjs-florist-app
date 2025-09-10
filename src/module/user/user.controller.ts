@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
+import { TestUserGuard } from 'src/gurad/test-user/test-user.guard';
 import { UpdateUserDto } from './dto/user.dto';
 
 @Controller('users')
@@ -37,7 +38,7 @@ export class UserController {
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, TestUserGuard)
   @SetMetadata('roles', ['Admin', 'User'])
   async updateUser(@Param('id') id: string, @Body() updateUser: UpdateUserDto) {
     return this.userService.updateUser(id, updateUser);
@@ -69,6 +70,34 @@ export class UserController {
   @SetMetadata('roles', ['Admin'])
   async getCustomerAnalytics() {
     return this.userService.getCustomerAnalytics();
+  }
+
+  @Get('product-analytics')
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['Admin'])
+  async getProductAnalytics() {
+    return this.userService.getProductAnalytics();
+  }
+
+  @Get('operational-metrics')
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['Admin'])
+  async getOperationalMetrics() {
+    return this.userService.getOperationalMetrics();
+  }
+
+  @Get('seasonal-analytics')
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['Admin'])
+  async getSeasonalAnalytics() {
+    return this.userService.getSeasonalAnalytics();
+  }
+
+  @Get('business-insights')
+  @UseGuards(AuthGuard)
+  @SetMetadata('roles', ['Admin'])
+  async getBusinessInsights() {
+    return this.userService.getBusinessInsights();
   }
 
   @UseGuards(AuthGuard)

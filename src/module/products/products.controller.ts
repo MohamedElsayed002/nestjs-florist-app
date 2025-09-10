@@ -22,13 +22,14 @@ import { ProductDocument } from 'src/schemas/product.schema';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
 import {} from '@nestjs/common';
+import { TestUserGuard } from 'src/gurad/test-user/test-user.guard';
 @Controller('products')
 export class ProductController {
   private logger = new Logger('ProductController');
   constructor(private readonly productService: ProductService) {}
 
   @Post('create')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, TestUserGuard)
   @SetMetadata('roles', ['Admin'])
   async createProduct(
     @Body() createProductDto: CreateProductDto,

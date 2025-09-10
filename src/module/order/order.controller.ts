@@ -14,21 +14,35 @@ import {
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
 import { OrderService } from './order.service';
 import { ShippingAddressDto, statusShippingDto } from './dto/create.order.dto';
+import { TestUserGuard } from 'src/gurad/test-user/test-user.guard';
 
 @Controller('order')
 @UseGuards(AuthGuard) // Protect routes
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(private readonly orderService: OrderService) { }
 
   @Post('add-stripe')
+  @UseGuards(TestUserGuard)
   @SetMetadata('roles', ['User', 'Admin'])
   async createOrderStripe(@Req() req: any, @Query('lang') lang: string = 'en') {
     const userId = req.user._id;
     return this.orderService.createOrderStripe(userId, lang);
   }
 
+  @Post('add-stripe-webhook')
+  @SetMetadata('roles', ['User', 'Admin'])
+  async createOrderStripeWithWebhook(
+    @Req() req: any,
+    @Query('lang') lang: string = 'en',
+    @Body() shippingAddress: ShippingAddressDto
+  ) {
+    const userId = req.user._id;
+    return this.orderService.createOrderStripeWithWebhook(userId, lang, shippingAddress);
+  }
+
   // ✅ Create a new order (User)
   @Post('add')
+  @UseGuards(TestUserGuard)
   @SetMetadata('roles', ['Admin', 'User'])
   async createOrder(
     @Req() req: any,

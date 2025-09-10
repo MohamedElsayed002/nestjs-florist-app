@@ -618,4 +618,380 @@ export class UserService {
       customerLTV
     };
   }
+
+  /**
+   * Get comprehensive product analytics
+   */
+  async getProductAnalytics() {
+    // Category performance
+    const categoryPerformance = await this.orderModel.aggregate([
+      { $match: { isPaid: true } },
+      { $unwind: '$cartItems' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'cartItems.product',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      { $unwind: '$productInfo' },
+      {
+        $group: {
+          _id: '$productInfo.category',
+          totalRevenue: { $sum: { $multiply: ['$cartItems.quantity', '$cartItems.price'] } },
+          totalQuantitySold: { $sum: '$cartItems.quantity' },
+          orderCount: { $sum: 1 },
+          avgPrice: { $avg: '$cartItems.price' }
+        }
+      },
+      { $sort: { totalRevenue: -1 } }
+    ]);
+
+    // Inventory turnover analysis
+    const inventoryTurnover = await this.productModel.aggregate([
+      {
+        $lookup: {
+          from: 'productdetails',
+          localField: 'details',
+          foreignField: '_id',
+          as: 'productDetails'
+        }
+      },
+      { $unwind: '$productDetails' },
+      {
+        $lookup: {
+          from: 'orders',
+          let: { productId: '$_id' },
+          pipeline: [
+            { $match: { isPaid: true } },
+            { $unwind: '$cartItems' },
+            { $match: { $expr: { $eq: ['$cartItems.product', '$$productId'] } } },
+            { $group: { _id: null, totalSold: { $sum: '$cartItems.quantity' } } }
+          ],
+          as: 'salesData'
+        }
+      },
+      {
+        $project: {
+          productName: '$productDetails.title',
+          currentStock: '$quantity',
+          totalSold: { $ifNull: [{ $arrayElemAt: ['$salesData.totalSold', 0] }, 0] },
+          turnoverRate: {
+            $cond: {
+              if: { $gt: ['$quantity', 0] },
+              then: { $divide: [{ $ifNull: [{ $arrayElemAt: ['$salesData.totalSold', 0] }, 0] }, '$quantity'] },
+              else: 0
+            }
+          },
+          category: 1,
+          price: 1
+        }
+      },
+      { $sort: { turnoverRate: -1 } },
+      { $limit: 20 }
+    ]);
+
+    // Seasonal product trends (last 12 months)
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    const seasonalTrends = await this.orderModel.aggregate([
+      { $match: { isPaid: true, createdAt: { $gte: twelveMonthsAgo } } },
+      { $unwind: '$cartItems' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'cartItems.product',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      { $unwind: '$productInfo' },
+      {
+        $group: {
+          _id: {
+            month: { $month: '$createdAt' },
+            category: '$productInfo.category'
+          },
+          totalRevenue: { $sum: { $multiply: ['$cartItems.quantity', '$cartItems.price'] } },
+          totalQuantitySold: { $sum: '$cartItems.quantity' }
+        }
+      },
+      {
+        $project: {
+          month: '$_id.month',
+          category: '$_id.category',
+          totalRevenue: 1,
+          totalQuantitySold: 1
+        }
+      },
+      { $sort: { month: 1, totalRevenue: -1 } }
+    ]);
+
+    return {
+      categoryPerformance,
+      inventoryTurnover,
+      seasonalTrends
+    };
+  }
+
+  /**
+   * Get operational metrics
+   */
+  async getOperationalMetrics() {
+    // Payment method distribution
+    const paymentMethodDistribution = await this.orderModel.aggregate([
+      { $match: { isPaid: true } },
+      {
+        $group: {
+          _id: '$paymentMethod',
+          count: { $sum: 1 },
+          totalAmount: { $sum: '$totalOrderPrice' },
+          avgAmount: { $avg: '$totalOrderPrice' }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    // Delivery performance metrics
+    const deliveryMetrics = await this.orderModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          deliveredOrders: { $sum: { $cond: ['$isDelivered', 1, 0] } },
+          avgDeliveryTime: {
+            $avg: {
+              $cond: [
+                { $and: ['$isDelivered', '$deliveredAt'] },
+                { $subtract: ['$deliveredAt', '$createdAt'] },
+                null
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    // Refund and cancellation rates
+    const refundMetrics = await this.orderModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          cancelledOrders: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'cancelled'] }, 1, 0] } },
+          refundedOrders: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'refunded'] }, 1, 0] } },
+          failedOrders: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'failed'] }, 1, 0] } }
+        }
+      }
+    ]);
+
+    // Peak hours analysis (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const peakHours = await this.orderModel.aggregate([
+      { $match: { createdAt: { $gte: thirtyDaysAgo }, isPaid: true } },
+      {
+        $group: {
+          _id: {
+            hour: { $hour: '$createdAt' },
+            dayOfWeek: { $dayOfWeek: '$createdAt' }
+          },
+          orderCount: { $sum: 1 },
+          totalRevenue: { $sum: '$totalOrderPrice' }
+        }
+      },
+      {
+        $project: {
+          hour: '$_id.hour',
+          dayOfWeek: '$_id.dayOfWeek',
+          orderCount: 1,
+          totalRevenue: 1
+        }
+      },
+      { $sort: { orderCount: -1 } }
+    ]);
+
+    return {
+      paymentMethodDistribution,
+      deliveryMetrics: deliveryMetrics[0] || {},
+      refundMetrics: refundMetrics[0] || {},
+      peakHours
+    };
+  }
+
+  /**
+   * Get seasonal and holiday analytics
+   */
+  async getSeasonalAnalytics() {
+    const currentYear = new Date().getFullYear();
+    const startOfYear = new Date(currentYear, 0, 1);
+    const endOfYear = new Date(currentYear, 11, 31);
+
+    // Holiday performance (Valentine's Day, Mother's Day, Christmas, etc.)
+    const holidayPerformance = await this.orderModel.aggregate([
+      {
+        $match: {
+          isPaid: true,
+          createdAt: { $gte: startOfYear, $lte: endOfYear }
+        }
+      },
+      {
+        $addFields: {
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            month: '$month',
+            day: '$day'
+          },
+          totalRevenue: { $sum: '$totalOrderPrice' },
+          orderCount: { $sum: 1 },
+          avgOrderValue: { $avg: '$totalOrderPrice' }
+        }
+      },
+      {
+        $match: {
+          $or: [
+            { '_id.month': 2, '_id.day': 14 }, // Valentine's Day
+            { '_id.month': 5, '_id.day': { $gte: 8, $lte: 14 } }, // Mother's Day (2nd Sunday)
+            { '_id.month': 12, '_id.day': { $gte: 20, $lte: 31 } }, // Christmas period
+            { '_id.month': 1, '_id.day': 1 }, // New Year
+            { '_id.month': 11, '_id.day': { $gte: 20, $lte: 30 } } // Thanksgiving period
+          ]
+        }
+      },
+      { $sort: { totalRevenue: -1 } }
+    ]);
+
+    // Monthly seasonal patterns
+    const monthlyPatterns = await this.orderModel.aggregate([
+      {
+        $match: {
+          isPaid: true,
+          createdAt: { $gte: startOfYear, $lte: endOfYear }
+        }
+      },
+      {
+        $group: {
+          _id: { $month: '$createdAt' },
+          totalRevenue: { $sum: '$totalOrderPrice' },
+          orderCount: { $sum: 1 },
+          avgOrderValue: { $avg: '$totalOrderPrice' },
+          uniqueCustomers: { $addToSet: '$user' }
+        }
+      },
+      {
+        $project: {
+          month: '$_id',
+          totalRevenue: 1,
+          orderCount: 1,
+          avgOrderValue: 1,
+          uniqueCustomers: { $size: '$uniqueCustomers' }
+        }
+      },
+      { $sort: { month: 1 } }
+    ]);
+
+    return {
+      holidayPerformance,
+      monthlyPatterns
+    };
+  }
+
+  /**
+   * Get comprehensive business insights
+   */
+  async getBusinessInsights() {
+    // Customer retention analysis
+    const customerRetention = await this.orderModel.aggregate([
+      { $match: { isPaid: true } },
+      {
+        $group: {
+          _id: '$user',
+          firstOrderDate: { $min: '$createdAt' },
+          lastOrderDate: { $max: '$createdAt' },
+          orderCount: { $sum: 1 },
+          totalSpent: { $sum: '$totalOrderPrice' }
+        }
+      },
+      {
+        $addFields: {
+          daysSinceFirstOrder: {
+            $divide: [
+              { $subtract: [new Date(), '$firstOrderDate'] },
+              1000 * 60 * 60 * 24
+            ]
+          },
+          daysSinceLastOrder: {
+            $divide: [
+              { $subtract: [new Date(), '$lastOrderDate'] },
+              1000 * 60 * 60 * 24
+            ]
+          }
+        }
+      },
+      {
+        $bucket: {
+          groupBy: '$orderCount',
+          boundaries: [1, 2, 3, 5, 10, Infinity],
+          default: 'Other',
+          output: {
+            count: { $sum: 1 },
+            avgTotalSpent: { $avg: '$totalSpent' },
+            avgDaysSinceLastOrder: { $avg: '$daysSinceLastOrder' }
+          }
+        }
+      }
+    ]);
+
+    // Geographic distribution (if you have location data)
+    const geographicDistribution = await this.orderModel.aggregate([
+      { $match: { isPaid: true } },
+      {
+        $group: {
+          _id: '$shippingAddress.city', // Assuming you have city in shipping address
+          orderCount: { $sum: 1 },
+          totalRevenue: { $sum: '$totalOrderPrice' },
+          avgOrderValue: { $avg: '$totalOrderPrice' }
+        }
+      },
+      { $sort: { orderCount: -1 } },
+      { $limit: 20 }
+    ]);
+
+    // Product bundle analysis
+    const productBundles = await this.orderModel.aggregate([
+      { $match: { isPaid: true, 'cartItems.1': { $exists: true } } }, // Orders with multiple items
+      { $unwind: '$cartItems' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'cartItems.product',
+          foreignField: '_id',
+          as: 'productInfo'
+        }
+      },
+      { $unwind: '$productInfo' },
+      {
+        $group: {
+          _id: '$productInfo.category',
+          frequency: { $sum: 1 },
+          avgQuantity: { $avg: '$cartItems.quantity' }
+        }
+      },
+      { $sort: { frequency: -1 } }
+    ]);
+
+    return {
+      customerRetention,
+      geographicDistribution,
+      productBundles
+    };
+  }
 }

@@ -15,7 +15,7 @@ export class AuthService {
   constructor(
     @InjectModel(Auth.name) private authModel: Model<Auth>,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async registerUser(createUserDto: CreateUserDto): Promise<Auth> {
     const { email, gender, name, password, phone } = createUserDto;
@@ -56,6 +56,38 @@ export class AuthService {
         phone: user.phone,
       },
       { secret: process.env.JWT_SECRET, expiresIn: '1h' }, // ✅ Corrected expiration format
+    );
+
+    return { access_token };
+  }
+
+  async testLoginAdmin(): Promise<{ access_token: string }> {
+    // Find or create test admin user
+    const testEmail = 'test.admin@example.com';
+    let user = await this.authModel.findOne({ email: testEmail });
+
+    if (!user) {
+      const hashedPassword = bcrypt.hashSync('TestAdmin123!', 8);
+      user = new this.authModel({
+        name: 'Test Admin',
+        email: testEmail,
+        password: hashedPassword,
+        gender: 'Male',
+        phone: '0000000000',
+        role: 'Admin',
+      });
+      await user.save();
+    }
+
+    const access_token = this.jwtService.sign(
+      {
+        id: user['_id'],
+        role: user.role,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      },
+      { secret: process.env.JWT_SECRET, expiresIn: '1h' },
     );
 
     return { access_token };

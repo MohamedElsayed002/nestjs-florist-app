@@ -14,14 +14,16 @@ import {
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AuthGuard } from 'src/gurad/auth/auth.guard';
+import { TestUserGuard } from 'src/gurad/test-user/test-user.guard';
 import { CreateCartDto } from './dto/cart.dto';
 
 @Controller('cart')
 @UseGuards(AuthGuard) // Protect routes
 export class CartController {
-  constructor(private readonly cartService: CartService) {}
+  constructor(private readonly cartService: CartService) { }
 
   @Post('add/:productId')
+  @UseGuards(TestUserGuard)
   @SetMetadata('roles', ['Admin', 'User'])
   async addToCart(
     @Param('productId') productId: string,
@@ -40,6 +42,7 @@ export class CartController {
   }
 
   @Delete('remove/:productId')
+  @UseGuards(TestUserGuard)
   @SetMetadata('roles', ['Admin', 'User'])
   async removeFromCart(@Req() req, @Param('productId') productId: string) {
     const userId = req.user._id;
@@ -47,6 +50,7 @@ export class CartController {
   }
 
   @Put('update/:productId')
+  @UseGuards(TestUserGuard)
   @SetMetadata('roles', ['Admin', 'User'])
   async updateProduct(
     @Param('productId') productId: string,
@@ -61,6 +65,7 @@ export class CartController {
   }
 
   @Delete('remove')
+  @UseGuards(TestUserGuard)
   @SetMetadata('roles', ['Admin', 'User'])
   async clearCart(@Req() req: any) {
     const userId = req.user._id;

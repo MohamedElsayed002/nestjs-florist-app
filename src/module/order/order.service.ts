@@ -26,7 +26,78 @@ export class OrderService {
     private emailService: EmailService,
   ) { }
 
-  // Pay online
+  // Pay online with proper webhook flow
+  async createOrderStripeWithWebhook(userId: string, lang: string, shippingAddress: {
+    street: string;
+    city: string;
+    phone: string;
+  }) {
+    const cart = await this.cartModel
+      .findOne({ user: userId })
+      .populate('cartItems.product');
+
+    if (!cart || cart.cartItems.length === 0) {
+      throw new NotFoundException('Cart not found or empty');
+    }
+
+    // Get user information
+    const user = await this.authModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Create line items with proper product names
+    const line_items = cart.cartItems.map((item) => {
+      // Get product name from details
+      let productName = 'Product';
+      if (item.product?.details && item.product.details.length > 0) {
+        const englishDetail = item.product.details.find(detail => detail.lang === 'en');
+        const arabicDetail = item.product.details.find(detail => detail.lang === 'ar');
+        const anyDetail = item.product.details[0];
+        productName = englishDetail?.title || arabicDetail?.title || anyDetail?.title || 'Product';
+      }
+
+      return {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: productName,
+            description: `Quantity: ${item.quantity}`,
+          },
+          unit_amount: Math.round(item.price * 100), // Convert to cents
+        },
+        quantity: item.quantity,
+      };
+    });
+
+    try {
+      const session = await new stripe.Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: '2025-02-24.acacia',
+      }).checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items,
+        mode: 'payment',
+        success_url: `${process.env.CLIENT_URL}/${lang}/order-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.CLIENT_URL}/${lang}/cart`,
+        metadata: {
+          userId: userId.toString(),
+          cartId: cart._id.toString(),
+          shippingAddress: JSON.stringify(shippingAddress),
+        },
+        customer_email: user.email,
+        shipping_address_collection: {
+          allowed_countries: ['US', 'CA', 'GB', 'AU', 'EG'], // Add your supported countries
+        },
+      });
+
+      return { url: session.url, sessionId: session.id };
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Stripe session creation failed');
+    }
+  }
+
+  // Pay online (Legacy method - creates order immediately)
   async createOrderStripe(userId: string, lang) {
     const cart = await this.cartModel
       .findOne({ user: userId })

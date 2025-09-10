@@ -10,6 +10,7 @@ import { CartModule } from './module/cart/cart.module';
 import { OrderModule } from './module/order/order.module';
 import { PaymentModule } from './module/payment/payment.module';
 import { FavoriteModule } from './module/favorite/favorite.module';
+import { StripeModule } from './module/stripe/stripe.module';
 
 @Module({
   imports: [
@@ -27,11 +28,12 @@ import { FavoriteModule } from './module/favorite/favorite.module';
     OrderModule,
     PaymentModule,
     FavoriteModule,
+    StripeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
 
 // import {
 //   Module,
