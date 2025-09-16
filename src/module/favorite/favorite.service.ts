@@ -7,11 +7,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Auth } from 'src/schemas/auth.schema';
 import { Favorite, FavoriteDocument } from 'src/schemas/favorite.schema';
+import { FavoriteRepository } from './repositories/favorite.repository';
 
 @Injectable()
 export class FavoriteService {
   constructor(
-    @InjectModel(Favorite.name) private favoriteModel: Model<FavoriteDocument>,
+    private readonly favoriteRepository: FavoriteRepository,
     @InjectModel(Auth.name) private userModel: Model<Auth>,
   ) {}
 
@@ -20,14 +21,13 @@ export class FavoriteService {
     if (!user) {
       throw new BadRequestException('User not found');
     }
-    let favorite = await this.favoriteModel.findOne({ user: userId });
+    let favorite = await this.favoriteRepository.findByUser(userId);
 
     if (!favorite) {
-      favorite = new this.favoriteModel({
+      favorite = await this.favoriteRepository.create({
         user: userId,
-        products: [productId],
-      });
-      await favorite.save();
+        products: [productId] as any,
+      } as any);
       return { message: 'Product added to Favorite' };
     }
 
@@ -39,26 +39,28 @@ export class FavoriteService {
     if (index === -1) {
       // Product not found, add it
       favorite.products.push(new Types.ObjectId(productId));
-      await favorite.save();
+      await this.favoriteRepository.save(favorite);
       return { message: 'Product added to Favorite' };
     } else {
       // Product exists, remove it
       favorite.products.splice(index, 1);
-      await favorite.save();
+      await this.favoriteRepository.save(favorite);
       return { message: 'Product removed from Favorite' };
     }
   }
 
   async getFavorite(userId: string, lang: string) {
-    const favorites = await this.favoriteModel.find({ user: userId }).populate({
-      path: 'products',
-      populate: {
-        path: 'details',
-        match: { lang },
-      },
-    });
+    const favorites = await this.favoriteRepository
+      .findByUser(userId)
+      .populate({
+        path: 'products',
+        populate: {
+          path: 'details',
+          match: { lang },
+        },
+      });
 
-    if (!favorites || favorites.length === 0) {
+    if (!favorites) {
       // Still using NotFoundException, but response is clean and structured
       throw new NotFoundException({
         success: false,
@@ -70,10 +72,10 @@ export class FavoriteService {
     return {
       success: true,
       message:
-        favorites[0].products.length > 0
+        favorites.products.length > 0
           ? 'Favorites fetched successfully.'
           : 'Favorites list is empty.',
-      data: favorites[0], // assuming 1 cart per user
+      data: favorites, // assuming 1 list per user
     };
   }
 }

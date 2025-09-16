@@ -7,12 +7,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Cart } from '../../schemas/cart.schema';
 import { Product } from '../../schemas/product.schema';
+import { CartRepository } from './repositories/cart.repository';
+import { CartPricingService } from './services/cart-pricing.service';
 
 @Injectable()
 export class CartService {
   constructor(
-    @InjectModel(Cart.name) private cartModel: Model<Cart>,
+    private readonly cartRepository: CartRepository,
     @InjectModel(Product.name) private productModel: Model<Product>,
+    private readonly cartPricingService: CartPricingService,
   ) {}
 
   async addToCart(
@@ -30,14 +33,14 @@ export class CartService {
       throw new BadRequestException("we don't have all this quantity");
     }
 
-    let cart = await this.cartModel.findOne({ user: userId });
+    let cart = await this.cartRepository.findByUser(userId);
 
     if (!cart) {
-      cart = new this.cartModel({
+      cart = await this.cartRepository.create({
         user: userId,
         cartItems: [],
         totalPrice: 0,
-      });
+      } as any);
     }
 
     const existingItem = cart.cartItems.find(
@@ -56,17 +59,14 @@ export class CartService {
       });
     }
 
-    cart.totalPrice = cart.cartItems.reduce(
-      (total, item) => total + item.price,
-      0,
-    );
-    await cart.save();
+    cart.totalPrice = this.cartPricingService.computeTotalPrice(cart.cartItems as any);
+    await this.cartRepository.save(cart);
     return cart;
   }
 
   async getCart(userId: string, lang: string) {
     // Find the cart associated with the user
-    const cart = await this.cartModel.findOne({ user: userId }).populate({
+    const cart = await this.cartRepository.findByUser(userId).populate({
       path: 'cartItems.product',
       populate: {
         path: 'details',
@@ -121,7 +121,7 @@ export class CartService {
     userId: string,
     productId: string,
   ): Promise<{ message: string }> {
-    const cart = await this.cartModel.findOne({ user: userId });
+    const cart = await this.cartRepository.findByUser(userId);
 
     if (!cart) {
       throw new NotFoundException('Cart not found');
@@ -137,17 +137,14 @@ export class CartService {
 
     cart.cartItems.splice(productIndex, 1);
 
-    cart.totalPrice = cart.cartItems.reduce(
-      (total, item) => total + item.price,
-      0,
-    );
+    cart.totalPrice = this.cartPricingService.computeTotalPrice(cart.cartItems as any);
 
     if (cart.cartItems.length === 0) {
-      await this.cartModel.findByIdAndDelete(cart._id);
+      await this.cartRepository.deleteById(String(cart._id));
       return { message: 'product removed from cart. your cart is empty' };
     }
 
-    await cart.save();
+    await this.cartRepository.save(cart);
     return { message: 'product removed from cart' };
   }
 
@@ -156,8 +153,8 @@ export class CartService {
     productId: string,
     quantity: number,
   ): Promise<Cart> {
-    const cart = await this.cartModel
-      .findOne({ user: userId })
+    const cart = await this.cartRepository
+      .findByUser(userId)
       .populate('cartItems.product'); // Ensure product details are populated
 
     if (!cart) {
@@ -192,16 +189,13 @@ export class CartService {
       throw new NotFoundException('Product not found in cart');
     }
 
-    cart.totalPrice = cart.cartItems.reduce(
-      (total, item) => total + item.price,
-      0,
-    );
+    cart.totalPrice = this.cartPricingService.computeTotalPrice(cart.cartItems as any);
 
-    return await cart.save();
+    return await this.cartRepository.save(cart);
   }
 
   async clearCart(userId: string): Promise<Cart> {
-    const cart = await this.cartModel.findOne({ user: userId });
+    const cart = await this.cartRepository.findByUser(userId);
     if (!cart) {
       throw new NotFoundException('Cart not found');
     }
@@ -209,6 +203,6 @@ export class CartService {
     cart.cartItems = [];
     cart.totalPrice = 0;
     cart.totalPriceDiscount = 0;
-    return await cart.save();
+    return await this.cartRepository.save(cart);
   }
 }
