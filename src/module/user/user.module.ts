@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from '../auth/auth.service';
+import { AuthModule } from '../auth/auth.module';
 import { JwtService } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Auth, authSchema } from 'src/schemas/auth.schema';
@@ -13,6 +14,7 @@ import { OrderModule } from '../order/order.module';
 
 @Module({
   imports: [
+    AuthModule,
     ProductModule,
     OrderModule,
     MongooseModule.forFeature([
@@ -22,7 +24,7 @@ import { OrderModule } from '../order/order.module';
     ]),
   ],
   controllers: [UserController],
-  providers: [JwtService, AuthService, UserService, EmailService],
+  providers: [JwtService, UserService, EmailService],
   exports: [AuthService], // ✅ Export AuthService so other modules can use it
 })
 export class UserModule {}
