@@ -360,7 +360,6 @@ export class OrderService {
         isDelivered: status.isDelivered,
         deliveredAt: status.deliveredAt ?? new Date(),
       },
-      { new: true },
     );
 
     if (!order) {
@@ -375,7 +374,6 @@ export class OrderService {
     const order = await this.orderRepository.updateById(
       orderId,
       { isPaid: true, paidAt: new Date() },
-      { new: true },
     );
 
     if (!order) {
@@ -406,13 +404,13 @@ export class OrderService {
       );
     }
 
-    await this.orderModel.findByIdAndDelete(orderId);
+    await this.orderRepository.deleteById(orderId);
     return { message: 'Order cancelled successfully' };
   }
 
   // ✅ Delete order (Admin only)
   async deleteOrder(orderId: string): Promise<{ message: string }> {
-    const order = await this.orderModel.findById(orderId);
+    const order = await this.orderRepository.findById(orderId);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
