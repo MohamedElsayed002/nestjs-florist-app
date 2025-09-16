@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from '../auth/auth.service';
 import { AuthModule } from '../auth/auth.module';
 import { JwtService } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -25,6 +24,5 @@ import { OrderModule } from '../order/order.module';
   ],
   controllers: [UserController],
   providers: [JwtService, UserService, EmailService],
-  exports: [AuthService], // ✅ Export AuthService so other modules can use it
 })
-export class UserModule {}
+export class UserModule { }
