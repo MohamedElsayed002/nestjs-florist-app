@@ -7,15 +7,19 @@ import {
   ProductDetail,
   ProductDetailDocument,
 } from '../../schemas/product.detail.schema';
-import { v2 as cloudinary } from 'cloudinary';
 import slugify from 'slugify';
+import { ProductRepository } from './repositories/product.repository';
+import { ProductSearchService } from './services/product-search.service';
+import { ProductImageService } from './services/product-image.service';
 @Injectable()
 export class ProductService {
   constructor(
-    @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    private readonly productRepository: ProductRepository,
+    private readonly productSearchService: ProductSearchService,
+    private readonly productImageService: ProductImageService,
     @InjectModel(ProductDetail.name)
     private productDetailModel: Model<ProductDetailDocument>,
-  ) {}
+  ) { }
 
   // Check if a product title is already taken
   async isTitleTaken(title: string): Promise<boolean> {
@@ -59,27 +63,23 @@ export class ProductService {
     }
 
     // Create a new product
-    const product = new this.productModel({
+    const product = await this.productRepository.create({
       price: createProductDto.price,
       quantity: createProductDto.quantity,
     });
-
     const details: mongoose.Types.ObjectId[] = [];
-
     for (const detailData of slugs) {
       const detail = new this.productDetailModel(detailData);
       await detail.save();
       details.push(detail._id as mongoose.Types.ObjectId);
     }
-
-    product.details = await this.productDetailModel
-      .find({
-        _id: { $in: details },
-      })
+    const populatedDetails = await this.productDetailModel
+      .find({ _id: { $in: details } })
       .exec();
-
-    await product.save();
-    return product;
+    const updated = await this.productRepository.updateById(String(product._id), {
+      details: populatedDetails as any,
+    } as any);
+    return updated as any;
   }
   async getAllProducts(
     lang: string,
@@ -87,63 +87,27 @@ export class ProductService {
     search: string = '',
   ): Promise<Array<ProductDocument>> {
     try {
-      const validLangs = await this.productDetailModel.distinct('lang').exec();
-      if (!validLangs.includes(lang)) {
-        console.warn(`Invalid lang: ${lang}. Valid languages: ${validLangs}`);
+      const validLang = await this.productSearchService.validateLang(lang);
+      if (!validLang) {
+        console.warn(`Invalid lang: ${lang}.`);
         return [];
       }
 
       // Step 2: Query ProductDetail for matching title and lang
-      const detailQuery: any = { lang };
-      const trimmedSearch = search?.trim() || '';
-      if (trimmedSearch) {
-        detailQuery.title = { $regex: trimmedSearch, $options: 'i' };
-      }
-
-      const productDetails = await this.productDetailModel
-        .find(detailQuery)
-        .exec();
-
-      // Step 3: Get ProductDetail IDs
-      const detailIds = productDetails.map((detail) => detail._id);
-
-      // Step 4: Build Product filter
-      const filter: any = {};
-      if (category?.trim()) {
-        const trimmedCategory = category.trim();
-        const validCategories = await this.productModel
-          .distinct('category')
-          .exec();
-        if (!validCategories.includes(trimmedCategory)) {
-          console.warn(
-            `Invalid category: ${trimmedCategory}. Valid categories: ${validCategories}`,
-          );
-        } else {
-          filter.category = trimmedCategory;
-          const categoryCheck = await this.productModel
-            .countDocuments({ category: trimmedCategory })
-            .exec();
-          if (categoryCheck === 0) {
-            console.warn(`No products found with category: ${trimmedCategory}`);
-          }
-        }
-      }
-      if (trimmedSearch && detailIds.length > 0) {
-        filter.details = { $in: detailIds };
-      } else if (trimmedSearch && detailIds.length === 0) {
+      const filter = await this.productSearchService.buildFilterByLangCategoryAndSearch(
+        lang,
+        category,
+        search,
+      );
+      if (filter === null) {
         console.log(
           'No matching ProductDetails found for search, returning empty array',
         );
         return [];
       }
 
-      // Step 5: Query Products and populate details
-      const products = await this.productModel
-        .find(filter)
-        .populate({
-          path: 'details',
-          match: { lang },
-        })
+      const products = await this.productRepository
+        .findWithDetails(filter, lang)
         .exec();
 
       // Step 6: Filter out products with empty details
@@ -159,7 +123,7 @@ export class ProductService {
         console.warn('No products found matching the criteria');
       }
 
-      return filteredProducts;
+      return filteredProducts as any;
     } catch (error) {
       console.error('Error fetching products:', error);
       throw new Error(`Failed to fetch products: ${error.message}`);
@@ -167,15 +131,14 @@ export class ProductService {
   }
 
   async getShopProducts(lang: string): Promise<Array<ProductDocument>> {
-    return this.productModel
-      .find({ category: 'shop' })
-      .populate({ path: 'details', match: { lang } })
+    return this.productRepository
+      .findWithDetails({ category: 'shop' }, lang)
       .exec();
   }
 
   // Fetch a single product with language filtering
   async getSingleProduct(lang: string, productId: string) {
-    const product = await this.productModel.findById(productId).populate({
+    const product = await this.productRepository.findById(productId).populate({
       path: 'details',
       match: { lang },
     });
@@ -199,17 +162,7 @@ export class ProductService {
       );
     }
 
-    return new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream({ folder: 'products' }, (error, result) => {
-          if (error) {
-            reject(new Error('Failed to upload image to Cloudinary'));
-          } else {
-            resolve({ imageUrl: result.secure_url, imageId: result.public_id });
-          }
-        })
-        .end(file.buffer);
-    });
+    return this.productImageService.uploadImage(file);
   }
 
   // Add an image to a product
@@ -217,7 +170,7 @@ export class ProductService {
     productId: string,
     file: Express.Multer.File,
   ): Promise<Product> {
-    const product = await this.productModel.findById(productId);
+    const product = await this.productRepository.findById(productId);
     if (!product) {
       throw new BadRequestException('Product not found.');
     }
@@ -228,43 +181,34 @@ export class ProductService {
 
     // If an image already exists, delete it from Cloudinary
     if (product.imageId) {
-      try {
-        await cloudinary.uploader.destroy(product.imageId);
-      } catch (error) {
-        console.error('Error deleting old image:', error);
-      }
+      await this.productImageService.deleteImage(product.imageId);
     }
 
     // Upload new image
     const { imageId, imageUrl } = await this.uploadImage(file);
 
     // Update product with new image
-    const updatedProduct = await this.productModel.findByIdAndUpdate(
-      productId,
-      { image: imageUrl, imageId: imageId },
-      { new: true },
-    );
+    const updatedProduct = await this.productRepository.updateById(productId, {
+      image: imageUrl,
+      imageId,
+    } as any);
 
     return updatedProduct;
   }
 
   // Delete a product and its details
   async deleteProduct(productId: string): Promise<{ message: string }> {
-    const product = await this.productModel.findById(productId);
+    const product = await this.productRepository.findById(productId);
     if (!product) {
       throw new BadRequestException('Product not found.');
     }
 
     if (product.imageId) {
-      try {
-        await cloudinary.uploader.destroy(product.imageId);
-      } catch (error) {
-        console.error('Error deleting old image:', error);
-      }
+      await this.productImageService.deleteImage(product.imageId);
     }
 
     await this.productDetailModel.deleteMany({ _id: { $in: product.details } });
-    await this.productModel.findByIdAndDelete(productId);
+    await this.productRepository.deleteById(productId);
 
     return { message: 'Product deleted successfully.' };
   }
@@ -274,10 +218,9 @@ export class ProductService {
     productId: string,
     updateData: { price?: number; quantity?: number },
   ): Promise<Product> {
-    const product = await this.productModel.findByIdAndUpdate(
+    const product = await this.productRepository.updateById(
       productId,
-      updateData,
-      { new: true },
+      updateData as any,
     );
 
     if (!product) {
@@ -296,12 +239,8 @@ export class ProductService {
     }
 
     // Find the associated product
-    const product = await this.productModel
-      .findOne({ details: productDetail._id })
-      .populate({
-        path: 'details',
-        match: { lang }, // Return only the requested language details
-      })
+    const product = await this.productRepository
+      .findOneWithDetails({ details: productDetail._id }, lang)
       .exec();
 
     if (!product) {

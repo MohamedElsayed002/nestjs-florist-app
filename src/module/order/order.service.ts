@@ -14,12 +14,13 @@ import { Auth } from 'src/schemas/auth.schema';
 import { ProductDetail } from 'src/schemas/product.detail.schema';
 import { ShippingAddressDto, statusShippingDto } from './dto/create.order.dto';
 import { EmailService } from 'src/service/email.provider';
+import { OrderRepository } from './repositories/order.repository';
 import stripe from 'stripe';
 
 @Injectable()
 export class OrderService {
   constructor(
-    @InjectModel(Order.name) private orderModel: Model<Order>,
+    private readonly orderRepository: OrderRepository,
     @InjectModel(Cart.name) private cartModel: Model<Cart>,
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Auth.name) private authModel: Model<Auth>,
@@ -137,7 +138,7 @@ export class OrderService {
         },
       });
 
-      const order = new this.orderModel({
+      const order = await this.orderRepository.create({
         user: userId,
         cartItems: cart.cartItems,
         totalOrderPrice: cart.totalPrice,
@@ -152,9 +153,7 @@ export class OrderService {
           street: 'Sedi bshr',
           phone: '+201093588197',
         },
-      });
-
-      await order.save();
+      } as any);
 
       // Populate the order with product details for email
       await order.populate({
@@ -232,15 +231,13 @@ export class OrderService {
     }
 
     // Create a new order
-    const order = new this.orderModel({
+    const order = await this.orderRepository.create({
       user: userId,
       cartItems: cart.cartItems,
       paymentMethod: 'Cash',
       totalOrderPrice: cart.totalPrice,
       shippingAddress,
-    });
-
-    await order.save();
+    } as any);
 
     // Populate the order with product details for email
     await order.populate({
@@ -307,13 +304,13 @@ export class OrderService {
     const skip = (page - 1) * limit;
 
     const [orders, total] = await Promise.all([
-      this.orderModel
+      this.orderRepository
         .find()
         .skip(skip)
         .limit(limit)
         .populate('user', 'email name')
         .populate('cartItems.product'),
-      this.orderModel.countDocuments(),
+      this.orderRepository.count(),
     ]);
 
     const totalPages = Math.ceil(total / limit);
@@ -328,14 +325,14 @@ export class OrderService {
 
   // ✅ Get orders of a specific user
   async getUserOrders(userId: string): Promise<Order[]> {
-    return await this.orderModel
+    return await this.orderRepository
       .find({ user: userId })
       .populate('cartItems.product');
   }
 
   // ✅ Get single order (Admin or order owner only)
   async getSingleOrder(userId: string, orderId: string): Promise<Order> {
-    const order = await this.orderModel
+    const order = await this.orderRepository
       .findById(orderId)
       .populate({ path: 'user', select: 'email name' })
       .populate('cartItems.product');
@@ -357,13 +354,12 @@ export class OrderService {
     orderId: string,
     status: statusShippingDto,
   ): Promise<Order> {
-    const order = await this.orderModel.findByIdAndUpdate(
+    const order = await this.orderRepository.updateById(
       orderId,
       {
         isDelivered: status.isDelivered,
         deliveredAt: status.deliveredAt ?? new Date(),
       },
-      { new: true },
     );
 
     if (!order) {
@@ -375,10 +371,9 @@ export class OrderService {
 
   // ✅ Mark order as paid (Admin & User)
   async markOrderAsPaid(orderId: string): Promise<Order> {
-    const order = await this.orderModel.findByIdAndUpdate(
+    const order = await this.orderRepository.updateById(
       orderId,
       { isPaid: true, paidAt: new Date() },
-      { new: true },
     );
 
     if (!order) {
@@ -393,7 +388,7 @@ export class OrderService {
     userId: string,
     orderId: string,
   ): Promise<{ message: string }> {
-    const order = await this.orderModel.findById(orderId);
+    const order = await this.orderRepository.findById(orderId);
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -409,13 +404,13 @@ export class OrderService {
       );
     }
 
-    await this.orderModel.findByIdAndDelete(orderId);
+    await this.orderRepository.deleteById(orderId);
     return { message: 'Order cancelled successfully' };
   }
 
   // ✅ Delete order (Admin only)
   async deleteOrder(orderId: string): Promise<{ message: string }> {
-    const order = await this.orderModel.findById(orderId);
+    const order = await this.orderRepository.findById(orderId);
     if (!order) {
       throw new NotFoundException('Order not found');
     }
@@ -426,7 +421,7 @@ export class OrderService {
       );
     }
 
-    await this.orderModel.findByIdAndDelete(orderId);
+    await this.orderRepository.deleteById(orderId);
     return { message: 'Order deleted successfully' };
   }
 }

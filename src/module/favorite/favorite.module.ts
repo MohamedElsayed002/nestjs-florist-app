@@ -6,6 +6,7 @@ import { Favorite } from 'src/schemas/favorite.schema';
 import { FavoriteSchema } from 'src/schemas/favorite.schema';
 import { AuthModule } from '../auth/auth.module';
 import { Auth, authSchema } from 'src/schemas/auth.schema';
+import { FavoriteRepository } from './repositories/favorite.repository';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -15,6 +16,6 @@ import { Auth, authSchema } from 'src/schemas/auth.schema';
     AuthModule,
   ],
   controllers: [FavoriteController],
-  providers: [FavoriteService],
+  providers: [FavoriteService, FavoriteRepository],
 })
 export class FavoriteModule {}

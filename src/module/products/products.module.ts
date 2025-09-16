@@ -12,6 +12,9 @@ import {
 import { ConfigModule } from '@nestjs/config';
 import { CloudinaryProvider } from 'src/service/cloundinary.provider';
 import { AuthModule } from '../auth/auth.module'; // ✅ Import AuthModule
+import { ProductRepository } from './repositories/product.repository';
+import { ProductSearchService } from './services/product-search.service';
+import { ProductImageService } from './services/product-image.service';
 
 @Module({
   imports: [
@@ -23,7 +26,13 @@ import { AuthModule } from '../auth/auth.module'; // ✅ Import AuthModule
     ]),
   ],
   controllers: [ProductController],
-  providers: [ProductService, CloudinaryProvider],
+  providers: [
+    ProductService,
+    ProductRepository,
+    ProductSearchService,
+    ProductImageService,
+    CloudinaryProvider,
+  ],
   exports: [CloudinaryProvider],
 })
 export class ProductModule {}

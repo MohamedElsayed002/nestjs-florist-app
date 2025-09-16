@@ -7,6 +7,8 @@ import { Product, ProductSchema } from 'src/schemas/product.schema';
 import { Auth, authSchema } from 'src/schemas/auth.schema';
 import { JwtService } from '@nestjs/jwt';
 import { AuthModule } from '../auth/auth.module';
+import { CartRepository } from './repositories/cart.repository';
+import { CartPricingService } from './services/cart-pricing.service';
 
 @Module({
   imports: [
@@ -18,6 +20,6 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
   ],
   controllers: [CartController],
-  providers: [CartService, JwtService],
+  providers: [CartService, JwtService, CartRepository, CartPricingService],
 })
 export class CartModule {}
