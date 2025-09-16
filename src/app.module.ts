@@ -11,9 +11,17 @@ import { OrderModule } from './module/order/order.module';
 import { PaymentModule } from './module/payment/payment.module';
 import { FavoriteModule } from './module/favorite/favorite.module';
 import { StripeModule } from './module/stripe/stripe.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [{
+        ttl: 60 * 1000, // milliseconds
+        limit: 20,
+      }],
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -31,35 +39,13 @@ import { StripeModule } from './module/stripe/stripe.module';
     StripeModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule { }
 
-// import {
-//   Module,
-//   NestModule,
-//   MiddlewareConsumer,
-//   RequestMethod,
-// } from '@nestjs/common';
-// import { LoggerMiddleware } from './logger.module';
-// import { AuthModule } from './auth/auth.module';
-// import { ConfigModule } from '@nestjs/config';
-// import { AuthController } from './auth/auth.controller';
-// import configuration from './config/configuration';
-
-// // consumer.apply(cors(), helmet(), logger).forRoutes(CatsController);
-
-// @Module({
-//   imports: [ConfigModule.forRoot({
-//     envFilePath: '.env',
-//     isGlobal : true,
-//     load : [configuration]
-//   }),AuthModule],
-// })
-// export class AppModule implements NestModule {
-//   configure(consumer: MiddlewareConsumer) {
-//     consumer
-//       .apply(LoggerMiddleware)
-//       .forRoutes({ path: 'auth', method: RequestMethod.GET });
-//   }
-// }
