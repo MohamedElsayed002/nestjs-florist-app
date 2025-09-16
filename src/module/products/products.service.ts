@@ -19,7 +19,7 @@ export class ProductService {
     private readonly productImageService: ProductImageService,
     @InjectModel(ProductDetail.name)
     private productDetailModel: Model<ProductDetailDocument>,
-  ) {}
+  ) { }
 
   // Check if a product title is already taken
   async isTitleTaken(title: string): Promise<boolean> {
@@ -76,7 +76,7 @@ export class ProductService {
     const populatedDetails = await this.productDetailModel
       .find({ _id: { $in: details } })
       .exec();
-    const updated = await this.productRepository.updateById(product._id, {
+    const updated = await this.productRepository.updateById(String(product._id), {
       details: populatedDetails as any,
     } as any);
     return updated as any;
@@ -89,7 +89,7 @@ export class ProductService {
     try {
       const validLang = await this.productSearchService.validateLang(lang);
       if (!validLang) {
-        console.warn(`Invalid lang: ${lang}. Valid languages: ${validLangs}`);
+        console.warn(`Invalid lang: ${lang}.`);
         return [];
       }
 
@@ -105,9 +105,7 @@ export class ProductService {
         );
         return [];
       }
-      if (Array.isArray(filter)) {
-        return [];
-      }
+
       const products = await this.productRepository
         .findWithDetails(filter, lang)
         .exec();
@@ -242,7 +240,7 @@ export class ProductService {
 
     // Find the associated product
     const product = await this.productRepository
-      .findWithDetails({ details: productDetail._id }, lang)
+      .findOneWithDetails({ details: productDetail._id }, lang)
       .exec();
 
     if (!product) {

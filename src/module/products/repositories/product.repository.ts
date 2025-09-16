@@ -8,7 +8,7 @@ export class ProductRepository {
   constructor(
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
-  ) {}
+  ) { }
 
   create(data: Partial<Product>): Promise<ProductDocument> {
     const product = new this.productModel(data);
@@ -30,6 +30,12 @@ export class ProductRepository {
   findWithDetails(filter: FilterQuery<ProductDocument>, lang: string) {
     return this.productModel
       .find(filter)
+      .populate({ path: 'details', match: { lang } });
+  }
+
+  findOneWithDetails(filter: FilterQuery<ProductDocument>, lang: string) {
+    return this.productModel
+      .findOne(filter)
       .populate({ path: 'details', match: { lang } });
   }
 

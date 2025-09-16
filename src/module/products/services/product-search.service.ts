@@ -10,7 +10,7 @@ export class ProductSearchService {
     private readonly productRepository: ProductRepository,
     @InjectModel(ProductDetail.name)
     private readonly productDetailModel: Model<ProductDetailDocument>,
-  ) {}
+  ) { }
 
   async validateLang(lang: string): Promise<boolean> {
     const validLangs = await this.productDetailModel.distinct('lang').exec();
@@ -41,7 +41,7 @@ export class ProductSearchService {
           trimmedCategory,
         );
         if (categoryCheck === 0) {
-          return [] as any; // no products in this category
+          return null; // no products in this category
         }
       }
     }

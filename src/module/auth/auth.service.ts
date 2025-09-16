@@ -4,59 +4,54 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Auth } from 'src/schemas/auth.schema';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import { CreateUserDto, LoginUserDto } from './dto/auth.dto';
-import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
+import { AuthRepository } from './repositories/auth.repository';
+import { PasswordHasherService } from './services/password-hasher.service';
+import { TokenService } from './services/token.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectModel(Auth.name) private authModel: Model<Auth>,
-    private jwtService: JwtService,
+    private readonly authRepository: AuthRepository,
+    private readonly passwordHasher: PasswordHasherService,
+    private readonly tokenService: TokenService,
   ) { }
 
   async registerUser(createUserDto: CreateUserDto): Promise<Auth> {
     const { email, gender, name, password, phone } = createUserDto;
-    const alreadyExist = await this.authModel.findOne({ email });
+    const alreadyExist = await this.authRepository.findByEmail(email);
     if (alreadyExist) {
       throw new BadRequestException('Email already exists');
     }
 
-    const hashedPassword = bcrypt.hashSync(password, 8);
+    const hashedPassword = this.passwordHasher.hash(password);
 
-    const user = new this.authModel({
+    return this.authRepository.create({
       name,
       email,
       password: hashedPassword,
       gender,
       phone,
     });
-
-    return user.save();
   }
 
   async loginUser(loginUser: LoginUserDto): Promise<{ access_token: string }> {
-    const user = await this.authModel.findOne({ email: loginUser.email });
+    const user = await this.authRepository.findByEmail(loginUser.email);
     if (!user) {
       throw new ConflictException('Email not found');
     }
 
-    if (!bcrypt.compareSync(loginUser.password, user.password)) {
+    if (!this.passwordHasher.compare(loginUser.password, user.password)) {
       throw new BadRequestException('Invalid Password');
     }
 
-    const access_token = this.jwtService.sign(
-      {
-        id: user['_id'],
-        role: user.role,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-      },
-      { secret: process.env.JWT_SECRET, expiresIn: '1h' }, // ✅ Corrected expiration format
-    );
+    const access_token = this.tokenService.signAccessToken({
+      id: user['_id'],
+      role: user.role,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+    });
 
     return { access_token };
   }
@@ -64,11 +59,11 @@ export class AuthService {
   async testLoginAdmin(): Promise<{ access_token: string }> {
     // Find or create test admin user
     const testEmail = 'test.admin@example.com';
-    let user = await this.authModel.findOne({ email: testEmail });
+    let user = await this.authRepository.findByEmail(testEmail);
 
     if (!user) {
-      const hashedPassword = bcrypt.hashSync('TestAdmin123!', 8);
-      user = new this.authModel({
+      const hashedPassword = this.passwordHasher.hash('TestAdmin123!');
+      user = await this.authRepository.create({
         name: 'Test Admin',
         email: testEmail,
         password: hashedPassword,
@@ -76,28 +71,24 @@ export class AuthService {
         phone: '0000000000',
         role: 'Admin',
       });
-      await user.save();
     }
 
-    const access_token = this.jwtService.sign(
-      {
-        id: user['_id'],
-        role: user.role,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-      },
-      { secret: process.env.JWT_SECRET, expiresIn: '1h' },
-    );
+    const access_token = this.tokenService.signAccessToken({
+      id: user['_id'],
+      role: user.role,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+    });
 
     return { access_token };
   }
 
   async findAll(): Promise<Auth[]> {
-    return this.authModel.find().exec();
+    return this.authRepository.findAll();
   }
 
   async findById(id: string): Promise<Auth | null> {
-    return await this.authModel.findById(id); // ✅ Ensure async/await is used
+    return this.authRepository.findById(id);
   }
 }
