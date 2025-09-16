@@ -7,21 +7,17 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Order } from 'src/schemas/order.schema';
-import Stripe from 'stripe';
 import { ConfigService } from '@nestjs/config';
+import { Inject } from '@nestjs/common';
+import { PAYMENT_GATEWAY, PaymentGateway } from './tokens';
 
 @Injectable()
 export class PaymentService {
-  private stripe: Stripe;
-
   constructor(
     @InjectModel(Order.name) private orderModel: Model<Order>,
     private configService: ConfigService,
-  ) {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-02-24.acacia',
-    });
-  }
+    @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
+  ) {}
 
   async createPaymentIntent(
     orderId: string,
@@ -32,13 +28,13 @@ export class PaymentService {
     }
 
     try {
-      const paymentIntent = await this.stripe.paymentIntents.create({
-        amount: order.totalOrderPrice * 100,
+      const paymentIntent = await this.gateway.createPaymentIntent({
+        amountCents: Math.round(order.totalOrderPrice * 100),
         currency: 'usd',
-        metadata: { orderId: orderId },
+        metadata: { orderId },
       });
 
-      return { clientSecret: paymentIntent.client_secret };
+      return paymentIntent;
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException('Error creating payment intent');
@@ -50,13 +46,7 @@ export class PaymentService {
     paymentIntentId: string,
   ): Promise<Order> {
     try {
-      const paymentIntent =
-        await this.stripe.paymentIntents.retrieve(paymentIntentId);
-
-      console.log(paymentIntent);
-      if (paymentIntent.status !== 'succeeded') {
-        throw new BadRequestException('Payment not successful');
-      }
+      await this.gateway.confirmPayment(paymentIntentId);
 
       const updateOrder = await this.orderModel.findByIdAndUpdate(
         orderId,

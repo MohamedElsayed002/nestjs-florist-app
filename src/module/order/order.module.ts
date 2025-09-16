@@ -10,6 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 import { JwtService } from '@nestjs/jwt';
 import { Cart, CartSchema } from 'src/schemas/cart.schema';
 import { EmailService } from 'src/service/email.provider';
+import { OrderRepository } from './repositories/order.repository';
 
 @Module({
   imports: [
@@ -23,6 +24,6 @@ import { EmailService } from 'src/service/email.provider';
     AuthModule,
   ],
   controllers: [OrderController],
-  providers: [OrderService, JwtService, EmailService],
+  providers: [OrderService, JwtService, EmailService, OrderRepository],
 })
 export class OrderModule { }
