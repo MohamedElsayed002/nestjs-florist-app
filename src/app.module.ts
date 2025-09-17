@@ -17,10 +17,12 @@ import { APP_GUARD } from '@nestjs/core';
 @Module({
   imports: [
     ThrottlerModule.forRoot({
-      throttlers: [{
-        ttl: 60 * 1000, // milliseconds
-        limit: 20,
-      }],
+      throttlers: [
+        {
+          ttl: 60 * 1000, // milliseconds
+          limit: 20,
+        },
+      ],
     }),
     ConfigModule.forRoot({
       isGlobal: true,
@@ -47,5 +49,4 @@ import { APP_GUARD } from '@nestjs/core';
     },
   ],
 })
-export class AppModule { }
-
+export class AppModule {}

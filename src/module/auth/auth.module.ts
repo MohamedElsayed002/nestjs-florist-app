@@ -20,4 +20,4 @@ import { TokenService } from './services/token.service';
   providers: [AuthService, AuthRepository, PasswordHasherService, TokenService],
   exports: [AuthService, JwtModule],
 })
-export class AuthModule { }
+export class AuthModule {}

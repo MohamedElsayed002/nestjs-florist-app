@@ -22,10 +22,19 @@ export class AuthRepository {
     return this.authModel.findOne({ email });
   }
 
+  findByFirebaseUid(firebaseUid: string) {
+    return this.authModel.findOne({ firebaseUid });
+  }
+
   create(data: Partial<Auth>) {
     const user = new this.authModel(data);
     return user.save();
   }
+
+  updateFirebaseInfo(
+    id: string,
+    firebaseInfo: { isFirebaseUser: boolean; firebaseUid: string },
+  ) {
+    return this.authModel.findByIdAndUpdate(id, firebaseInfo, { new: true });
+  }
 }
-
-

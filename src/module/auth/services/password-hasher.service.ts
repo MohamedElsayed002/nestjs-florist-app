@@ -13,5 +13,3 @@ export class PasswordHasherService {
     return bcrypt.compareSync(plain, hash);
   }
 }
-
-

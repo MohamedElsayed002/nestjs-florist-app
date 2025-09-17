@@ -23,5 +23,3 @@ export class FavoriteRepository {
     return favorite.save();
   }
 }
-
-

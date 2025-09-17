@@ -5,7 +5,10 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Order, OrderSchema } from 'src/schemas/order.schema';
 import { Auth, authSchema } from 'src/schemas/auth.schema';
 import { Product, ProductSchema } from 'src/schemas/product.schema';
-import { ProductDetail, ProductDetailSchema } from 'src/schemas/product.detail.schema';
+import {
+  ProductDetail,
+  ProductDetailSchema,
+} from 'src/schemas/product.detail.schema';
 import { AuthModule } from '../auth/auth.module';
 import { JwtService } from '@nestjs/jwt';
 import { Cart, CartSchema } from 'src/schemas/cart.schema';
@@ -26,4 +29,4 @@ import { OrderRepository } from './repositories/order.repository';
   controllers: [OrderController],
   providers: [OrderService, JwtService, EmailService, OrderRepository],
 })
-export class OrderModule { }
+export class OrderModule {}

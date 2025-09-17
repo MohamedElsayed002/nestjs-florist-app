@@ -9,5 +9,3 @@ export interface PaymentGateway {
 
   confirmPayment(paymentIntentId: string): Promise<void>;
 }
-
-

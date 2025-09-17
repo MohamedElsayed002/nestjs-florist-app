@@ -20,7 +20,7 @@ import { CreateCartDto } from './dto/cart.dto';
 @Controller('cart')
 @UseGuards(AuthGuard) // Protect routes
 export class CartController {
-  constructor(private readonly cartService: CartService) { }
+  constructor(private readonly cartService: CartService) {}
 
   @Post('add/:productId')
   @UseGuards(TestUserGuard)

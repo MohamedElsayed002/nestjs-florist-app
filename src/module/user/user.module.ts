@@ -25,4 +25,4 @@ import { OrderModule } from '../order/order.module';
   controllers: [UserController],
   providers: [JwtService, UserService, EmailService],
 })
-export class UserModule { }
+export class UserModule {}

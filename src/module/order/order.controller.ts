@@ -19,7 +19,7 @@ import { TestUserGuard } from 'src/gurad/test-user/test-user.guard';
 @Controller('order')
 @UseGuards(AuthGuard) // Protect routes
 export class OrderController {
-  constructor(private readonly orderService: OrderService) { }
+  constructor(private readonly orderService: OrderService) {}
 
   @Post('add-stripe')
   @UseGuards(TestUserGuard)
@@ -34,10 +34,14 @@ export class OrderController {
   async createOrderStripeWithWebhook(
     @Req() req: any,
     @Query('lang') lang: string = 'en',
-    @Body() shippingAddress: ShippingAddressDto
+    @Body() shippingAddress: ShippingAddressDto,
   ) {
     const userId = req.user._id;
-    return this.orderService.createOrderStripeWithWebhook(userId, lang, shippingAddress);
+    return this.orderService.createOrderStripeWithWebhook(
+      userId,
+      lang,
+      shippingAddress,
+    );
   }
 
   // ✅ Create a new order (User)

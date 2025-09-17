@@ -8,10 +8,10 @@ export class Auth {
   @Prop({ required: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   password: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   phone: string;
 
   @Prop()
@@ -25,6 +25,12 @@ export class Auth {
 
   @Prop({ default: 'User', enum: ['User', 'Admin'] })
   role: string;
+
+  @Prop({ default: false })
+  isFirebaseUser: boolean;
+
+  @Prop()
+  firebaseUid: string;
 }
 
 export const authSchema = SchemaFactory.createForClass(Auth);

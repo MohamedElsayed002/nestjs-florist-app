@@ -311,7 +311,7 @@ export class EmailService {
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
       });
     };
 
@@ -661,35 +661,58 @@ export class EmailService {
                         <span class="info-label">Expected Delivery:</span>
                         <span class="info-value">2-5 business days</span>
                     </div>
-                    ${orderData.isDelivered ? `
+                    ${
+                      orderData.isDelivered
+                        ? `
                     <div class="info-item">
                         <span class="info-label">Delivered On:</span>
                         <span class="info-value">${formatDate(orderData.deliveredAt)}</span>
                     </div>
-                    ` : ''}
+                    `
+                        : ''
+                    }
                 </div>
             </div>
             
             <!-- Products Section -->
             <div class="products-section">
                 <h3>Your Order Items</h3>
-                ${orderData.cartItems.map(item => {
-      // Handle product name from details array
-      let productName = 'Product';
+                ${orderData.cartItems
+                  .map((item) => {
+                    // Handle product name from details array
+                    let productName = 'Product';
 
-      if (item.product?.details && item.product.details.length > 0) {
-        // Try to get English title first, then Arabic, then any available title
-        const englishDetail = item.product.details.find(detail => detail.lang === 'en');
-        const arabicDetail = item.product.details.find(detail => detail.lang === 'ar');
-        const anyDetail = item.product.details[0];
+                    if (
+                      item.product?.details &&
+                      item.product.details.length > 0
+                    ) {
+                      // Try to get English title first, then Arabic, then any available title
+                      const englishDetail = item.product.details.find(
+                        (detail) => detail.lang === 'en',
+                      );
+                      const arabicDetail = item.product.details.find(
+                        (detail) => detail.lang === 'ar',
+                      );
+                      const anyDetail = item.product.details[0];
 
-        productName = englishDetail?.title || arabicDetail?.title || anyDetail?.title || 'Product';
-      } else if (item.product?.name || item.product?.productName || item.product?.title) {
-        // Fallback to direct product fields
-        productName = item.product.name || item.product.productName || item.product.title;
-      }
+                      productName =
+                        englishDetail?.title ||
+                        arabicDetail?.title ||
+                        anyDetail?.title ||
+                        'Product';
+                    } else if (
+                      item.product?.name ||
+                      item.product?.productName ||
+                      item.product?.title
+                    ) {
+                      // Fallback to direct product fields
+                      productName =
+                        item.product.name ||
+                        item.product.productName ||
+                        item.product.title;
+                    }
 
-      return `
+                    return `
                   <div class="product-item">
                       <div class="product-info">
                           <div class="product-name">${productName}</div>
@@ -702,7 +725,8 @@ export class EmailService {
                       </div>
                   </div>
                   `;
-    }).join('')}
+                  })
+                  .join('')}
             </div>
             
             <!-- Total Section -->

@@ -17,7 +17,7 @@ import { UpdateUserDto } from './dto/user.dto';
 
 @Controller('users')
 export class UserController {
-  constructor(private userService: UserService) { }
+  constructor(private userService: UserService) {}
 
   @Post('forgot-password')
   async forgotPassword(@Body('email') email: string) {

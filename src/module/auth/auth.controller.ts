@@ -14,7 +14,7 @@ import { AuthGuard } from 'src/gurad/auth/auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(private readonly authService: AuthService) {}
 
   @UseGuards(AuthGuard)
   @SetMetadata('roles', ['Admin'])
@@ -40,6 +40,10 @@ export class AuthController {
     return this.authService.testLoginAdmin();
   }
 
+  @Post('firebase-verify')
+  async verifyFirebaseToken(@Body() body: { token: string }) {
+    return this.authService.verifyFirebaseToken(body.token);
+  }
 
   @UseGuards(AuthGuard)
   @Get('profile')

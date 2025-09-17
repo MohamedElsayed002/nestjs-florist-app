@@ -23,7 +23,7 @@ export class UserService {
     @InjectModel(Order.name) private orderModel: Model<Order>,
     private authService: AuthService,
     private emailService: EmailService,
-  ) { }
+  ) {}
 
   async forgotPassword(email: string): Promise<{ message: string }> {
     const user = await this.authModel.findOne({ email });
@@ -238,7 +238,7 @@ export class UserService {
   private async calculateTotalRevenue(): Promise<number> {
     const result = await this.orderModel.aggregate([
       { $match: { isPaid: true } },
-      { $group: { _id: null, total: { $sum: '$totalOrderPrice' } } }
+      { $group: { _id: null, total: { $sum: '$totalOrderPrice' } } },
     ]);
     return result.length > 0 ? result[0].total : 0;
   }
@@ -255,10 +255,10 @@ export class UserService {
       {
         $match: {
           isPaid: true,
-          createdAt: { $gte: startOfMonth }
-        }
+          createdAt: { $gte: startOfMonth },
+        },
       },
-      { $group: { _id: null, total: { $sum: '$totalOrderPrice' } } }
+      { $group: { _id: null, total: { $sum: '$totalOrderPrice' } } },
     ]);
     return result.length > 0 ? result[0].total : 0;
   }
@@ -274,16 +274,16 @@ export class UserService {
           _id: '$user',
           totalSpent: { $sum: '$totalOrderPrice' },
           orderCount: { $sum: 1 },
-          lastOrderDate: { $max: '$createdAt' }
-        }
+          lastOrderDate: { $max: '$createdAt' },
+        },
       },
       {
         $lookup: {
           from: 'auths',
           localField: '_id',
           foreignField: '_id',
-          as: 'userInfo'
-        }
+          as: 'userInfo',
+        },
       },
       { $unwind: '$userInfo' },
       {
@@ -293,11 +293,11 @@ export class UserService {
           email: '$userInfo.email',
           totalSpent: 1,
           orderCount: 1,
-          lastOrderDate: 1
-        }
+          lastOrderDate: 1,
+        },
       },
       { $sort: { totalSpent: -1 } },
-      { $limit: limit }
+      { $limit: limit },
     ]);
   }
 
@@ -312,17 +312,19 @@ export class UserService {
         $group: {
           _id: '$cartItems.product',
           totalQuantitySold: { $sum: '$cartItems.quantity' },
-          totalRevenue: { $sum: { $multiply: ['$cartItems.quantity', '$cartItems.price'] } },
-          orderCount: { $sum: 1 }
-        }
+          totalRevenue: {
+            $sum: { $multiply: ['$cartItems.quantity', '$cartItems.price'] },
+          },
+          orderCount: { $sum: 1 },
+        },
       },
       {
         $lookup: {
           from: 'products',
           localField: '_id',
           foreignField: '_id',
-          as: 'productInfo'
-        }
+          as: 'productInfo',
+        },
       },
       { $unwind: '$productInfo' },
       {
@@ -330,8 +332,8 @@ export class UserService {
           from: 'productdetails',
           localField: 'productInfo.details',
           foreignField: '_id',
-          as: 'productDetails'
-        }
+          as: 'productDetails',
+        },
       },
       {
         $project: {
@@ -341,11 +343,11 @@ export class UserService {
           currentStock: '$productInfo.quantity',
           totalQuantitySold: 1,
           totalRevenue: 1,
-          orderCount: 1
-        }
+          orderCount: 1,
+        },
       },
       { $sort: { totalQuantitySold: -1 } },
-      { $limit: limit }
+      { $limit: limit },
     ]);
   }
 
@@ -360,8 +362,8 @@ export class UserService {
           from: 'productdetails',
           localField: 'details',
           foreignField: '_id',
-          as: 'productDetails'
-        }
+          as: 'productDetails',
+        },
       },
       {
         $project: {
@@ -369,10 +371,10 @@ export class UserService {
           productName: { $arrayElemAt: ['$productDetails.title', 0] },
           currentStock: '$quantity',
           price: 1,
-          category: 1
-        }
+          category: 1,
+        },
       },
-      { $sort: { quantity: 1 } }
+      { $sort: { quantity: 1 } },
     ]);
   }
 
@@ -386,10 +388,10 @@ export class UserService {
           _id: {
             isPaid: '$isPaid',
             isDelivered: '$isDelivered',
-            paymentStatus: '$paymentStatus'
+            paymentStatus: '$paymentStatus',
           },
-          count: { $sum: 1 }
-        }
+          count: { $sum: 1 },
+        },
       },
       {
         $project: {
@@ -405,23 +407,23 @@ export class UserService {
                     $cond: {
                       if: { $eq: ['$_id.paymentStatus', 'failed'] },
                       then: 'Failed',
-                      else: 'Pending'
-                    }
-                  }
-                }
-              }
-            }
+                      else: 'Pending',
+                    },
+                  },
+                },
+              },
+            },
           },
-          count: 1
-        }
+          count: 1,
+        },
       },
       {
         $group: {
           _id: '$status',
-          count: { $sum: '$count' }
-        }
+          count: { $sum: '$count' },
+        },
       },
-      { $sort: { count: -1 } }
+      { $sort: { count: -1 } },
     ]);
   }
 
@@ -437,8 +439,8 @@ export class UserService {
           from: 'auths',
           localField: 'user',
           foreignField: '_id',
-          as: 'userInfo'
-        }
+          as: 'userInfo',
+        },
       },
       { $unwind: '$userInfo' },
       {
@@ -451,9 +453,9 @@ export class UserService {
           isDelivered: 1,
           paymentMethod: 1,
           createdAt: 1,
-          itemCount: { $size: '$cartItems' }
-        }
-      }
+          itemCount: { $size: '$cartItems' },
+        },
+      },
     ]);
   }
 
@@ -466,7 +468,7 @@ export class UserService {
     startOfMonth.setHours(0, 0, 0, 0);
 
     return await this.authModel.countDocuments({
-      createdAt: { $gte: startOfMonth }
+      createdAt: { $gte: startOfMonth },
     });
   }
 
@@ -482,18 +484,18 @@ export class UserService {
       {
         $match: {
           isPaid: true,
-          createdAt: { $gte: sixMonthsAgo }
-        }
+          createdAt: { $gte: sixMonthsAgo },
+        },
       },
       {
         $group: {
           _id: {
             year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
+            month: { $month: '$createdAt' },
           },
           revenue: { $sum: '$totalOrderPrice' },
-          orderCount: { $sum: 1 }
-        }
+          orderCount: { $sum: 1 },
+        },
       },
       {
         $project: {
@@ -501,14 +503,14 @@ export class UserService {
             $dateFromParts: {
               year: '$_id.year',
               month: '$_id.month',
-              day: 1
-            }
+              day: 1,
+            },
           },
           revenue: 1,
-          orderCount: 1
-        }
+          orderCount: 1,
+        },
       },
-      { $sort: { date: 1 } }
+      { $sort: { date: 1 } },
     ]);
 
     // Daily revenue for current month
@@ -520,19 +522,19 @@ export class UserService {
       {
         $match: {
           isPaid: true,
-          createdAt: { $gte: startOfMonth }
-        }
+          createdAt: { $gte: startOfMonth },
+        },
       },
       {
         $group: {
           _id: {
             year: { $year: '$createdAt' },
             month: { $month: '$createdAt' },
-            day: { $dayOfMonth: '$createdAt' }
+            day: { $dayOfMonth: '$createdAt' },
           },
           revenue: { $sum: '$totalOrderPrice' },
-          orderCount: { $sum: 1 }
-        }
+          orderCount: { $sum: 1 },
+        },
       },
       {
         $project: {
@@ -540,19 +542,19 @@ export class UserService {
             $dateFromParts: {
               year: '$_id.year',
               month: '$_id.month',
-              day: '$_id.day'
-            }
+              day: '$_id.day',
+            },
           },
           revenue: 1,
-          orderCount: 1
-        }
+          orderCount: 1,
+        },
       },
-      { $sort: { date: 1 } }
+      { $sort: { date: 1 } },
     ]);
 
     return {
       monthlyRevenue,
-      dailyRevenue
+      dailyRevenue,
     };
   }
 
@@ -570,10 +572,10 @@ export class UserService {
         $group: {
           _id: {
             year: { $year: '$createdAt' },
-            month: { $month: '$createdAt' }
+            month: { $month: '$createdAt' },
           },
-          newCustomers: { $sum: 1 }
-        }
+          newCustomers: { $sum: 1 },
+        },
       },
       {
         $project: {
@@ -581,13 +583,13 @@ export class UserService {
             $dateFromParts: {
               year: '$_id.year',
               month: '$_id.month',
-              day: 1
-            }
+              day: 1,
+            },
           },
-          newCustomers: 1
-        }
+          newCustomers: 1,
+        },
       },
-      { $sort: { date: 1 } }
+      { $sort: { date: 1 } },
     ]);
 
     // Customer lifetime value distribution
@@ -597,8 +599,8 @@ export class UserService {
         $group: {
           _id: '$user',
           totalSpent: { $sum: '$totalOrderPrice' },
-          orderCount: { $sum: 1 }
-        }
+          orderCount: { $sum: 1 },
+        },
       },
       {
         $bucket: {
@@ -607,15 +609,15 @@ export class UserService {
           default: 'Other',
           output: {
             count: { $sum: 1 },
-            avgOrderCount: { $avg: '$orderCount' }
-          }
-        }
-      }
+            avgOrderCount: { $avg: '$orderCount' },
+          },
+        },
+      },
     ]);
 
     return {
       customerAcquisition,
-      customerLTV
+      customerLTV,
     };
   }
 
@@ -632,20 +634,22 @@ export class UserService {
           from: 'products',
           localField: 'cartItems.product',
           foreignField: '_id',
-          as: 'productInfo'
-        }
+          as: 'productInfo',
+        },
       },
       { $unwind: '$productInfo' },
       {
         $group: {
           _id: '$productInfo.category',
-          totalRevenue: { $sum: { $multiply: ['$cartItems.quantity', '$cartItems.price'] } },
+          totalRevenue: {
+            $sum: { $multiply: ['$cartItems.quantity', '$cartItems.price'] },
+          },
           totalQuantitySold: { $sum: '$cartItems.quantity' },
           orderCount: { $sum: 1 },
-          avgPrice: { $avg: '$cartItems.price' }
-        }
+          avgPrice: { $avg: '$cartItems.price' },
+        },
       },
-      { $sort: { totalRevenue: -1 } }
+      { $sort: { totalRevenue: -1 } },
     ]);
 
     // Inventory turnover analysis
@@ -655,8 +659,8 @@ export class UserService {
           from: 'productdetails',
           localField: 'details',
           foreignField: '_id',
-          as: 'productDetails'
-        }
+          as: 'productDetails',
+        },
       },
       { $unwind: '$productDetails' },
       {
@@ -666,30 +670,43 @@ export class UserService {
           pipeline: [
             { $match: { isPaid: true } },
             { $unwind: '$cartItems' },
-            { $match: { $expr: { $eq: ['$cartItems.product', '$$productId'] } } },
-            { $group: { _id: null, totalSold: { $sum: '$cartItems.quantity' } } }
+            {
+              $match: { $expr: { $eq: ['$cartItems.product', '$$productId'] } },
+            },
+            {
+              $group: { _id: null, totalSold: { $sum: '$cartItems.quantity' } },
+            },
           ],
-          as: 'salesData'
-        }
+          as: 'salesData',
+        },
       },
       {
         $project: {
           productName: '$productDetails.title',
           currentStock: '$quantity',
-          totalSold: { $ifNull: [{ $arrayElemAt: ['$salesData.totalSold', 0] }, 0] },
+          totalSold: {
+            $ifNull: [{ $arrayElemAt: ['$salesData.totalSold', 0] }, 0],
+          },
           turnoverRate: {
             $cond: {
               if: { $gt: ['$quantity', 0] },
-              then: { $divide: [{ $ifNull: [{ $arrayElemAt: ['$salesData.totalSold', 0] }, 0] }, '$quantity'] },
-              else: 0
-            }
+              then: {
+                $divide: [
+                  {
+                    $ifNull: [{ $arrayElemAt: ['$salesData.totalSold', 0] }, 0],
+                  },
+                  '$quantity',
+                ],
+              },
+              else: 0,
+            },
           },
           category: 1,
-          price: 1
-        }
+          price: 1,
+        },
       },
       { $sort: { turnoverRate: -1 } },
-      { $limit: 20 }
+      { $limit: 20 },
     ]);
 
     // Seasonal product trends (last 12 months)
@@ -704,35 +721,37 @@ export class UserService {
           from: 'products',
           localField: 'cartItems.product',
           foreignField: '_id',
-          as: 'productInfo'
-        }
+          as: 'productInfo',
+        },
       },
       { $unwind: '$productInfo' },
       {
         $group: {
           _id: {
             month: { $month: '$createdAt' },
-            category: '$productInfo.category'
+            category: '$productInfo.category',
           },
-          totalRevenue: { $sum: { $multiply: ['$cartItems.quantity', '$cartItems.price'] } },
-          totalQuantitySold: { $sum: '$cartItems.quantity' }
-        }
+          totalRevenue: {
+            $sum: { $multiply: ['$cartItems.quantity', '$cartItems.price'] },
+          },
+          totalQuantitySold: { $sum: '$cartItems.quantity' },
+        },
       },
       {
         $project: {
           month: '$_id.month',
           category: '$_id.category',
           totalRevenue: 1,
-          totalQuantitySold: 1
-        }
+          totalQuantitySold: 1,
+        },
       },
-      { $sort: { month: 1, totalRevenue: -1 } }
+      { $sort: { month: 1, totalRevenue: -1 } },
     ]);
 
     return {
       categoryPerformance,
       inventoryTurnover,
-      seasonalTrends
+      seasonalTrends,
     };
   }
 
@@ -748,10 +767,10 @@ export class UserService {
           _id: '$paymentMethod',
           count: { $sum: 1 },
           totalAmount: { $sum: '$totalOrderPrice' },
-          avgAmount: { $avg: '$totalOrderPrice' }
-        }
+          avgAmount: { $avg: '$totalOrderPrice' },
+        },
       },
-      { $sort: { count: -1 } }
+      { $sort: { count: -1 } },
     ]);
 
     // Delivery performance metrics
@@ -766,12 +785,12 @@ export class UserService {
               $cond: [
                 { $and: ['$isDelivered', '$deliveredAt'] },
                 { $subtract: ['$deliveredAt', '$createdAt'] },
-                null
-              ]
-            }
-          }
-        }
-      }
+                null,
+              ],
+            },
+          },
+        },
+      },
     ]);
 
     // Refund and cancellation rates
@@ -780,11 +799,17 @@ export class UserService {
         $group: {
           _id: null,
           totalOrders: { $sum: 1 },
-          cancelledOrders: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'cancelled'] }, 1, 0] } },
-          refundedOrders: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'refunded'] }, 1, 0] } },
-          failedOrders: { $sum: { $cond: [{ $eq: ['$paymentStatus', 'failed'] }, 1, 0] } }
-        }
-      }
+          cancelledOrders: {
+            $sum: { $cond: [{ $eq: ['$paymentStatus', 'cancelled'] }, 1, 0] },
+          },
+          refundedOrders: {
+            $sum: { $cond: [{ $eq: ['$paymentStatus', 'refunded'] }, 1, 0] },
+          },
+          failedOrders: {
+            $sum: { $cond: [{ $eq: ['$paymentStatus', 'failed'] }, 1, 0] },
+          },
+        },
+      },
     ]);
 
     // Peak hours analysis (last 30 days)
@@ -797,28 +822,28 @@ export class UserService {
         $group: {
           _id: {
             hour: { $hour: '$createdAt' },
-            dayOfWeek: { $dayOfWeek: '$createdAt' }
+            dayOfWeek: { $dayOfWeek: '$createdAt' },
           },
           orderCount: { $sum: 1 },
-          totalRevenue: { $sum: '$totalOrderPrice' }
-        }
+          totalRevenue: { $sum: '$totalOrderPrice' },
+        },
       },
       {
         $project: {
           hour: '$_id.hour',
           dayOfWeek: '$_id.dayOfWeek',
           orderCount: 1,
-          totalRevenue: 1
-        }
+          totalRevenue: 1,
+        },
       },
-      { $sort: { orderCount: -1 } }
+      { $sort: { orderCount: -1 } },
     ]);
 
     return {
       paymentMethodDistribution,
       deliveryMetrics: deliveryMetrics[0] || {},
       refundMetrics: refundMetrics[0] || {},
-      peakHours
+      peakHours,
     };
   }
 
@@ -835,25 +860,25 @@ export class UserService {
       {
         $match: {
           isPaid: true,
-          createdAt: { $gte: startOfYear, $lte: endOfYear }
-        }
+          createdAt: { $gte: startOfYear, $lte: endOfYear },
+        },
       },
       {
         $addFields: {
           month: { $month: '$createdAt' },
-          day: { $dayOfMonth: '$createdAt' }
-        }
+          day: { $dayOfMonth: '$createdAt' },
+        },
       },
       {
         $group: {
           _id: {
             month: '$month',
-            day: '$day'
+            day: '$day',
           },
           totalRevenue: { $sum: '$totalOrderPrice' },
           orderCount: { $sum: 1 },
-          avgOrderValue: { $avg: '$totalOrderPrice' }
-        }
+          avgOrderValue: { $avg: '$totalOrderPrice' },
+        },
       },
       {
         $match: {
@@ -862,11 +887,11 @@ export class UserService {
             { '_id.month': 5, '_id.day': { $gte: 8, $lte: 14 } }, // Mother's Day (2nd Sunday)
             { '_id.month': 12, '_id.day': { $gte: 20, $lte: 31 } }, // Christmas period
             { '_id.month': 1, '_id.day': 1 }, // New Year
-            { '_id.month': 11, '_id.day': { $gte: 20, $lte: 30 } } // Thanksgiving period
-          ]
-        }
+            { '_id.month': 11, '_id.day': { $gte: 20, $lte: 30 } }, // Thanksgiving period
+          ],
+        },
       },
-      { $sort: { totalRevenue: -1 } }
+      { $sort: { totalRevenue: -1 } },
     ]);
 
     // Monthly seasonal patterns
@@ -874,8 +899,8 @@ export class UserService {
       {
         $match: {
           isPaid: true,
-          createdAt: { $gte: startOfYear, $lte: endOfYear }
-        }
+          createdAt: { $gte: startOfYear, $lte: endOfYear },
+        },
       },
       {
         $group: {
@@ -883,8 +908,8 @@ export class UserService {
           totalRevenue: { $sum: '$totalOrderPrice' },
           orderCount: { $sum: 1 },
           avgOrderValue: { $avg: '$totalOrderPrice' },
-          uniqueCustomers: { $addToSet: '$user' }
-        }
+          uniqueCustomers: { $addToSet: '$user' },
+        },
       },
       {
         $project: {
@@ -892,15 +917,15 @@ export class UserService {
           totalRevenue: 1,
           orderCount: 1,
           avgOrderValue: 1,
-          uniqueCustomers: { $size: '$uniqueCustomers' }
-        }
+          uniqueCustomers: { $size: '$uniqueCustomers' },
+        },
       },
-      { $sort: { month: 1 } }
+      { $sort: { month: 1 } },
     ]);
 
     return {
       holidayPerformance,
-      monthlyPatterns
+      monthlyPatterns,
     };
   }
 
@@ -917,24 +942,24 @@ export class UserService {
           firstOrderDate: { $min: '$createdAt' },
           lastOrderDate: { $max: '$createdAt' },
           orderCount: { $sum: 1 },
-          totalSpent: { $sum: '$totalOrderPrice' }
-        }
+          totalSpent: { $sum: '$totalOrderPrice' },
+        },
       },
       {
         $addFields: {
           daysSinceFirstOrder: {
             $divide: [
               { $subtract: [new Date(), '$firstOrderDate'] },
-              1000 * 60 * 60 * 24
-            ]
+              1000 * 60 * 60 * 24,
+            ],
           },
           daysSinceLastOrder: {
             $divide: [
               { $subtract: [new Date(), '$lastOrderDate'] },
-              1000 * 60 * 60 * 24
-            ]
-          }
-        }
+              1000 * 60 * 60 * 24,
+            ],
+          },
+        },
       },
       {
         $bucket: {
@@ -944,10 +969,10 @@ export class UserService {
           output: {
             count: { $sum: 1 },
             avgTotalSpent: { $avg: '$totalSpent' },
-            avgDaysSinceLastOrder: { $avg: '$daysSinceLastOrder' }
-          }
-        }
-      }
+            avgDaysSinceLastOrder: { $avg: '$daysSinceLastOrder' },
+          },
+        },
+      },
     ]);
 
     // Geographic distribution (if you have location data)
@@ -958,11 +983,11 @@ export class UserService {
           _id: '$shippingAddress.city', // Assuming you have city in shipping address
           orderCount: { $sum: 1 },
           totalRevenue: { $sum: '$totalOrderPrice' },
-          avgOrderValue: { $avg: '$totalOrderPrice' }
-        }
+          avgOrderValue: { $avg: '$totalOrderPrice' },
+        },
       },
       { $sort: { orderCount: -1 } },
-      { $limit: 20 }
+      { $limit: 20 },
     ]);
 
     // Product bundle analysis
@@ -974,24 +999,24 @@ export class UserService {
           from: 'products',
           localField: 'cartItems.product',
           foreignField: '_id',
-          as: 'productInfo'
-        }
+          as: 'productInfo',
+        },
       },
       { $unwind: '$productInfo' },
       {
         $group: {
           _id: '$productInfo.category',
           frequency: { $sum: 1 },
-          avgQuantity: { $avg: '$cartItems.quantity' }
-        }
+          avgQuantity: { $avg: '$cartItems.quantity' },
+        },
       },
-      { $sort: { frequency: -1 } }
+      { $sort: { frequency: -1 } },
     ]);
 
     return {
       customerRetention,
       geographicDistribution,
-      productBundles
+      productBundles,
     };
   }
 }

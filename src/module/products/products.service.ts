@@ -19,7 +19,7 @@ export class ProductService {
     private readonly productImageService: ProductImageService,
     @InjectModel(ProductDetail.name)
     private productDetailModel: Model<ProductDetailDocument>,
-  ) { }
+  ) {}
 
   // Check if a product title is already taken
   async isTitleTaken(title: string): Promise<boolean> {
@@ -76,9 +76,12 @@ export class ProductService {
     const populatedDetails = await this.productDetailModel
       .find({ _id: { $in: details } })
       .exec();
-    const updated = await this.productRepository.updateById(String(product._id), {
-      details: populatedDetails as any,
-    } as any);
+    const updated = await this.productRepository.updateById(
+      String(product._id),
+      {
+        details: populatedDetails as any,
+      } as any,
+    );
     return updated as any;
   }
   async getAllProducts(
@@ -94,11 +97,12 @@ export class ProductService {
       }
 
       // Step 2: Query ProductDetail for matching title and lang
-      const filter = await this.productSearchService.buildFilterByLangCategoryAndSearch(
-        lang,
-        category,
-        search,
-      );
+      const filter =
+        await this.productSearchService.buildFilterByLangCategoryAndSearch(
+          lang,
+          category,
+          search,
+        );
       if (filter === null) {
         console.log(
           'No matching ProductDetails found for search, returning empty array',

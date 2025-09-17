@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ProductDetail, ProductDetailDocument } from 'src/schemas/product.detail.schema';
+import {
+  ProductDetail,
+  ProductDetailDocument,
+} from 'src/schemas/product.detail.schema';
 import { ProductRepository } from '../repositories/product.repository';
 
 @Injectable()
@@ -10,7 +13,7 @@ export class ProductSearchService {
     private readonly productRepository: ProductRepository,
     @InjectModel(ProductDetail.name)
     private readonly productDetailModel: Model<ProductDetailDocument>,
-  ) { }
+  ) {}
 
   async validateLang(lang: string): Promise<boolean> {
     const validLangs = await this.productDetailModel.distinct('lang').exec();
@@ -28,7 +31,9 @@ export class ProductSearchService {
       detailQuery.title = { $regex: trimmedSearch, $options: 'i' };
     }
 
-    const productDetails = await this.productDetailModel.find(detailQuery).exec();
+    const productDetails = await this.productDetailModel
+      .find(detailQuery)
+      .exec();
     const detailIds = productDetails.map((detail) => detail._id);
 
     const filter: any = {};
@@ -37,9 +42,8 @@ export class ProductSearchService {
       const validCategories = await this.productRepository.distinctCategories();
       if (validCategories.includes(trimmedCategory)) {
         filter.category = trimmedCategory;
-        const categoryCheck = await this.productRepository.countByCategory(
-          trimmedCategory,
-        );
+        const categoryCheck =
+          await this.productRepository.countByCategory(trimmedCategory);
         if (categoryCheck === 0) {
           return null; // no products in this category
         }
@@ -55,5 +59,3 @@ export class ProductSearchService {
     return filter;
   }
 }
-
-

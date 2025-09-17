@@ -25,14 +25,18 @@ export class OrderService {
     @InjectModel(Product.name) private productModel: Model<Product>,
     @InjectModel(Auth.name) private authModel: Model<Auth>,
     private emailService: EmailService,
-  ) { }
+  ) {}
 
   // Pay online with proper webhook flow
-  async createOrderStripeWithWebhook(userId: string, lang: string, shippingAddress: {
-    street: string;
-    city: string;
-    phone: string;
-  }) {
+  async createOrderStripeWithWebhook(
+    userId: string,
+    lang: string,
+    shippingAddress: {
+      street: string;
+      city: string;
+      phone: string;
+    },
+  ) {
     const cart = await this.cartModel
       .findOne({ user: userId })
       .populate('cartItems.product');
@@ -52,10 +56,18 @@ export class OrderService {
       // Get product name from details
       let productName = 'Product';
       if (item.product?.details && item.product.details.length > 0) {
-        const englishDetail = item.product.details.find(detail => detail.lang === 'en');
-        const arabicDetail = item.product.details.find(detail => detail.lang === 'ar');
+        const englishDetail = item.product.details.find(
+          (detail) => detail.lang === 'en',
+        );
+        const arabicDetail = item.product.details.find(
+          (detail) => detail.lang === 'ar',
+        );
         const anyDetail = item.product.details[0];
-        productName = englishDetail?.title || arabicDetail?.title || anyDetail?.title || 'Product';
+        productName =
+          englishDetail?.title ||
+          arabicDetail?.title ||
+          anyDetail?.title ||
+          'Product';
       }
 
       return {
@@ -160,8 +172,8 @@ export class OrderService {
         path: 'cartItems.product',
         populate: {
           path: 'details',
-          model: 'ProductDetail'
-        }
+          model: 'ProductDetail',
+        },
       });
 
       const bulkUpdates = cart.cartItems.map((item) => ({
@@ -196,7 +208,6 @@ export class OrderService {
           deliveredAt: order.deliveredAt,
           paidAt: order.paidAt,
         };
-
 
         await this.emailService.sendOrderReceipt(user.email, orderReceiptData);
       } catch (emailError) {
@@ -244,8 +255,8 @@ export class OrderService {
       path: 'cartItems.product',
       populate: {
         path: 'details',
-        model: 'ProductDetail'
-      }
+        model: 'ProductDetail',
+      },
     });
 
     // If order created successfully, update stock & delete cart
@@ -280,7 +291,10 @@ export class OrderService {
           paidAt: order.paidAt,
         };
 
-        console.log('Cash order - cartItems with populated products:', JSON.stringify(order.cartItems, null, 2));
+        console.log(
+          'Cash order - cartItems with populated products:',
+          JSON.stringify(order.cartItems, null, 2),
+        );
         await this.emailService.sendOrderReceipt(user.email, orderReceiptData);
       } catch (emailError) {
         console.error('Failed to send order receipt email:', emailError);
@@ -354,13 +368,10 @@ export class OrderService {
     orderId: string,
     status: statusShippingDto,
   ): Promise<Order> {
-    const order = await this.orderRepository.updateById(
-      orderId,
-      {
-        isDelivered: status.isDelivered,
-        deliveredAt: status.deliveredAt ?? new Date(),
-      },
-    );
+    const order = await this.orderRepository.updateById(orderId, {
+      isDelivered: status.isDelivered,
+      deliveredAt: status.deliveredAt ?? new Date(),
+    });
 
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -371,10 +382,10 @@ export class OrderService {
 
   // ✅ Mark order as paid (Admin & User)
   async markOrderAsPaid(orderId: string): Promise<Order> {
-    const order = await this.orderRepository.updateById(
-      orderId,
-      { isPaid: true, paidAt: new Date() },
-    );
+    const order = await this.orderRepository.updateById(orderId, {
+      isPaid: true,
+      paidAt: new Date(),
+    });
 
     if (!order) {
       throw new NotFoundException('Order not found');

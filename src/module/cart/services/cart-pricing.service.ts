@@ -6,5 +6,3 @@ export class CartPricingService {
     return cartItems.reduce((total, item) => total + (item.price || 0), 0);
   }
 }
-
-

@@ -59,7 +59,9 @@ export class CartService {
       });
     }
 
-    cart.totalPrice = this.cartPricingService.computeTotalPrice(cart.cartItems as any);
+    cart.totalPrice = this.cartPricingService.computeTotalPrice(
+      cart.cartItems as any,
+    );
     await this.cartRepository.save(cart);
     return cart;
   }
@@ -137,7 +139,9 @@ export class CartService {
 
     cart.cartItems.splice(productIndex, 1);
 
-    cart.totalPrice = this.cartPricingService.computeTotalPrice(cart.cartItems as any);
+    cart.totalPrice = this.cartPricingService.computeTotalPrice(
+      cart.cartItems as any,
+    );
 
     if (cart.cartItems.length === 0) {
       await this.cartRepository.deleteById(String(cart._id));
@@ -189,7 +193,9 @@ export class CartService {
       throw new NotFoundException('Product not found in cart');
     }
 
-    cart.totalPrice = this.cartPricingService.computeTotalPrice(cart.cartItems as any);
+    cart.totalPrice = this.cartPricingService.computeTotalPrice(
+      cart.cartItems as any,
+    );
 
     return await this.cartRepository.save(cart);
   }

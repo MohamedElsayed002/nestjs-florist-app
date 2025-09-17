@@ -8,7 +8,7 @@ export class ProductRepository {
   constructor(
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
-  ) { }
+  ) {}
 
   create(data: Partial<Product>): Promise<ProductDocument> {
     const product = new this.productModel(data);
@@ -55,5 +55,3 @@ export class ProductRepository {
     return this.productModel.distinct('category');
   }
 }
-
-

@@ -26,11 +26,10 @@ export class StripeGateway implements PaymentGateway {
   }
 
   async confirmPayment(paymentIntentId: string): Promise<void> {
-    const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentIntent =
+      await this.stripe.paymentIntents.retrieve(paymentIntentId);
     if (paymentIntent.status !== 'succeeded') {
       throw new Error('Payment not successful');
     }
   }
 }
-
-
